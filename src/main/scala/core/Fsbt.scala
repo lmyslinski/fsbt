@@ -18,8 +18,13 @@ object Fsbt {
 
   def compile(args: Array[String]): Unit ={
     val filePaths = recursiveListFiles(new File(args(1)), scalaRegex).map( x=> x.getAbsolutePath)
-    val command = List("scalac") ++ filePaths ++ List("-d", "target")
-    println(command)
+    val command = windowsCompatible(List("scalac") ++ filePaths ++ List("-d", "target"))
+    val output = command.!!
+    println(output)
+  }
+
+  def run(args: Array[String]): Unit = {
+    val command = windowsCompatible(List("scala",  "-cp", "target", args(1)))
     val output = command.!!
     println(output)
   }
@@ -29,7 +34,15 @@ object Fsbt {
       println("Printing info")
     }else args(0) match {
       case "compile" => compile(args)
+      case "run" => run(args)
       case unknown => println ("command not found: " + unknown)
+    }
+  }
+
+  def windowsCompatible(command: List[String]) = {
+    sys.props("os.name").toLowerCase match {
+      case x if x contains "windows" => Seq("cmd", "/C") ++ command
+      case _ => command
     }
   }
 

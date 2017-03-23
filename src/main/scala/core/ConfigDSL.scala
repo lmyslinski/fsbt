@@ -25,9 +25,10 @@ class ConfigDSL extends JavaTokenParsers {
 
 object ConfigDSL extends ConfigDSL{
 
-	def parseConfigFile(uri: String) = {
+	def parseConfigFile(uri: String): Map[String, ConfigValue] = {
 		parseAll(configuration, uri) match {
-			case Success(res, _) => res
+			case Success(res, _) => res.map(f => (f.key, f.value)).toMap
+			case _ => Map()
 		}
 	}
 }

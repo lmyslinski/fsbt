@@ -10,14 +10,14 @@ object DSLTest {
 
 
 	def main(args: Array[String]): Unit = {
-		val reader = new FileReader("C:\\Dev\\fsbt\\testProject\\build.fsbt")
-		val dsl = new ConfigDSL
-		val res = dsl.parseAll(dsl.configuration, reader)
-//		match {
-//			case dsl.Success(result, _) => println(result)
-//			case dsl.Failure(msg, _) => println(msg)
-//		}
-		println(res)
+		val fileConfig = ConfigDSL.parseConfigFile("C:\\Dev\\fsbt\\testProject\\build.fsbt")
+		val defaultConfig = Config.getDefaultConfig()
+
+
+		if(!fileConfig.keySet.subsetOf(defaultConfig keySet)){
+			println("Whooops")
+		}
+
 	}
 
 }

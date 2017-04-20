@@ -16,29 +16,35 @@ class ConfigDSL extends JavaTokenParsers {
 
   def configuration = rep(expression)
 
-  def expression = assignment | extension
+  def expression = assignment | dependencies
 
   def assignment = ident ~ ":=" ~ stringLiteral ^^ { case (a ~ b ~ c) => MapEntry(a, c) }
 
-  def extension = ident ~ "+=" ~ rep(dependency) ^^ { case (a ~ b ~ c) => MapEntry(a, DependencyList(c)) }
+  def dependencies = ident ~ "+=" ~ rep(dependency) ^^ { case (a ~ b ~ c) => MapEntry(a, DependencyList(c)) }
 
   def dependency = stringLiteral ~ "%%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e) }
 
   implicit def toPureString(value: String): PureString = PureString(value.substring(1, value.length() - 1))
-
 }
 
 object ConfigDSL extends ConfigDSL {
 
-  def parseConfigFile(uri: String): Try[Map[String, ConfigValue]] = Try {
+  val name = "name"
+  val version = "version"
+
+  def parseConfigFile(uri: String): Try[Map[ConfigEntry.Value, ConfigValue]] = Try {
     parseAll(configuration, new FileReader(uri)) match {
-      case Success(res, _) => res.map(f => (f.key, f.value)).toMap
+      case Success(res, _) => res.map(f => (ConfigEntry.withName(f.key), f.value)).toMap
       case Failure(res, _) => throw new ConfigFileException(res.toString)
     }
   }
 }
 
 sealed trait ConfigValue
+
+case class Name(value: String) extends ConfigValue
+
+case class Version(value: String) extends ConfigValue
 
 case class PureString(value: String) extends ConfigValue
 

@@ -3,3 +3,5 @@ name := "fsbt"
 version := "0.0.1"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"

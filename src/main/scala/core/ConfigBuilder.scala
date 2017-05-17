@@ -4,7 +4,7 @@ import core.config.ConfigEntry
 
 class ConfigBuilder(val configFileUri : String = ConfigBuilder.defaultConfigFileUri) {
 
-    val config = (for{
+    val config: Map[ConfigEntry.Value, Any] = (for{
       configFileUri <- ConfigValidator.validateConfigFileExists(configFileUri)
       configMap <- ConfigDSL.parseConfigFile(configFileUri)
       configMap <- ConfigValidator.validateConfigFileKeySet(configMap)

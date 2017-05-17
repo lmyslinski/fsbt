@@ -7,7 +7,7 @@ import scala.util.matching.Regex
 
 object Fsbt {
 
-  var config: ConfigBuilder = new ConfigBuilder()
+//  var config: ConfigBuilder = new ConfigBuilder()
   val scalaRegex = new Regex(".scala$")
 
   def recursiveListFiles(f: File, r: Regex): Array[File] = {

@@ -5,11 +5,17 @@ import java.nio.file.{Files, StandardCopyOption}
 import java.util.stream.Collectors
 
 import better.files.File
+import com.typesafe.scalalogging.Logger
+import core.config.Dependency
+import org.slf4j.LoggerFactory
 
 import scala.xml.{Source, XML}
 
 
-case class MavenDependency(groupId: String, artifactId: String, version: String) {
+case class MavenDependency(dependency: Dependency) {
+
+  val logger = Logger(LoggerFactory.getLogger(this.getClass))
+
   val mavenCentral = "http://central.maven.org/maven2"
   val wtf="org/scala-lang/modules/scala-parser-combinators_2.11/1.0.5/scala-parser-combinators_2.11-1.0.5.jar"
   val fsbtPath = System.getProperty("user.home") + "/.fsbt"
@@ -17,22 +23,32 @@ case class MavenDependency(groupId: String, artifactId: String, version: String)
 
   val scalaVersion = "_2.12"
 
-  val groupIdParsed: String = stripQuotes(groupId.replace('.','/'))
-  val artifactIdParsed: String = stripQuotes(artifactId)
-  val versionParsed: String = stripQuotes(version)
+  val groupIdParsed: String = stripQuotes(dependency.group.replace('.','/'))
+  val artifactIdParsed: String = stripQuotes(dependency.artifact)
+  val versionParsed: String = stripQuotes(dependency.version)
 
-  val baseUri = s"$mavenCentral/$groupIdParsed/$artifactIdParsed$scalaVersion/$versionParsed/$artifactIdParsed$scalaVersion-$versionParsed"
+  def getbaseUri() = if (dependency.withScalaVersion) {
+    s"$mavenCentral/$groupIdParsed/$artifactIdParsed$scalaVersion/$versionParsed/$artifactIdParsed$scalaVersion-$versionParsed"
+  } else {
+    s"$mavenCentral/$groupIdParsed/$artifactIdParsed/$versionParsed/$artifactIdParsed-$versionParsed"
+  }
+
+  val baseUri = getbaseUri()
+
+
   val pomUrl = s"$baseUri.pom"
   val jarUri = s"$baseUri.jar"
 
   def downloadDependency(pomFile: File, jarFile: File): Unit = {
     if (!pomFile.exists && !jarFile.exists) {
-      println("Downloading")
+      logger.debug("Downloading")
       val pom = downloadPom(pomFile)
       val jar = downloadJar(jarFile)
       downloadTransitiveDependencies(scala.xml.XML.loadString(pom))
     } else {
-      println("Loading XML file")
+      logger.debug(s"Pom found: ${pomFile.path}")
+      logger.debug(s"Jar found: ${jarFile.path}")
+      logger.debug(s"Parsing dependencies for: ${jarFile.name}")
      downloadTransitiveDependencies(XML.loadFile(pomFile.toJava))
     }
   }

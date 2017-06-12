@@ -1,12 +1,10 @@
-package core
+package core.config
 
 /**
   * Created by lukmy on 19.03.2017.
   */
 
 import java.io.FileReader
-
-import core.config.ConfigEntry
 
 import scala.util.Try
 import scala.util.parsing.combinator._
@@ -16,21 +14,24 @@ class ConfigDSL extends JavaTokenParsers {
 
   def configuration = rep(expression)
 
-  def expression = assignment | dependencies
+  def expression = assignment | singleDep | multiDep
 
   def assignment = ident ~ ":=" ~ stringLiteral ^^ { case (a ~ b ~ c) => MapEntry(a, c) }
 
-  def dependencies = ident ~ "+=" ~ rep(dependency) ^^ { case (a ~ b ~ c) => MapEntry(a, DependencyList(c)) }
+  def singleDep = "libraryDependencies" ~ "+=" ~ rep(dependency) ^^ { case (a ~ b ~ c) => MapEntry(a, DependencyList(c)) }
 
-  def dependency = stringLiteral ~ "%%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e) }
+  def multiDep = "libraryDependencies" ~ "++=" ~ "Seq("  ~ repsep(dependency, ",") ~ ")" ^^ { case (a ~ b ~ c ~ d ~ e) => MapEntry(a, DependencyList(d)) }
+
+  def dependency = dependencyWithScala | dependencyWithoutScala
+
+  def dependencyWithScala = stringLiteral ~ "%%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e, withScalaVersion = true) }
+
+  def dependencyWithoutScala = stringLiteral ~ "%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e, withScalaVersion = false) }
 
   implicit def toPureString(value: String): PureString = PureString(value.substring(1, value.length() - 1))
 }
 
 object ConfigDSL extends ConfigDSL {
-
-  val name = "name"
-  val version = "version"
 
   def parseConfigFile(uri: String): Try[Map[ConfigEntry.Value, ConfigValue]] = Try {
     parseAll(configuration, new FileReader(uri)) match {
@@ -48,7 +49,7 @@ case class Version(value: String) extends ConfigValue
 
 case class PureString(value: String) extends ConfigValue
 
-case class Dependency(group: String, artifact: String, version: String) extends ConfigValue
+case class Dependency(group: String, artifact: String, version: String, withScalaVersion: Boolean) extends ConfigValue
 
 case class DependencyList(dependencies: List[Dependency]) extends ConfigValue
 

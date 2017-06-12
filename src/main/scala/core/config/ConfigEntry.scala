@@ -10,4 +10,5 @@ object ConfigEntry extends Enumeration{
 	val sourceDirectory = Value("sourceDir")
 	val targetDirectory = Value("targetDir")
 	val dependencyList = Value("libraryDependencies")
+	val workingDir = Value("workDir")
 }

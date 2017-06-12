@@ -1,8 +1,6 @@
-package core
+package core.config
 
 import java.nio.file.{Files, Paths}
-
-import core.config.ConfigEntry
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +22,7 @@ object ConfigValidator {
         Success(configFileUri)
       }
       else {
-        Failure(new RuntimeException("FSBT config file not found"))
+        Failure(new RuntimeException("Fsbt config file not found"))
       }
   }
 }

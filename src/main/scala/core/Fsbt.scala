@@ -1,10 +1,9 @@
 package core
 
 import better.files.File
-import better.files.File.Type.Directory
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
-import com.typesafe.zinc.{Compiler, Inputs, Parsed, Settings, Setup, Util, ZincClient}
+import context.ContextUtil
 import core.config.{ConfigBuilder, ConfigEntry}
 import org.slf4j.LoggerFactory
 
@@ -15,11 +14,12 @@ object Fsbt {
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
   val scalaRegex = new Regex(".scala$")
-  val classRegex = new Regex(".class$")
+  // parse only top-level class files, omit nested classes
+  val classRegex = new Regex("^[^$]+.class$")
 
-  def recursiveListFiles(path: String, r: Regex): Array[File] = {
+  def recursiveListFiles(path: String, r: Regex): List[File] = {
     val these = File(path).listRecursively
-    these.filter(f => r.findFirstIn(f.name).isDefined).toArray
+    these.filter(f => r.findFirstIn(f.name).isDefined).toList
   }
 
   def compile(args: List[String], config: ConfigBuilder): Unit ={
@@ -35,13 +35,12 @@ object Fsbt {
 
     val targetDir = config.config(ConfigEntry.targetDirectory).toString
     val targetClasses = recursiveListFiles(targetDir, classRegex)
-    val mainClasses: List[String] = AsmUtil.findMainMethods(targetClasses)
+    val ctx = ContextUtil.identifyContext(targetClasses)
 
-    if(mainClasses.isEmpty){
-      println("Main method not found")
+    if(ctx.isEmpty){
+      println("No context were found")
     }else{
-      val command = List("scala",  "-cp", targetDir, args(1))
-      command.!!
+      ctx(0).run(targetDir)
     }
   }
 
@@ -58,4 +57,5 @@ object Fsbt {
       case unknown => println ("command not found: " + unknown)
     }
   }
+
 }

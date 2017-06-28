@@ -11,9 +11,9 @@ libraryDependencies ++=
     "com.github.pathikrit" %% "better-files" % "2.17.1",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
     "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.6",
-    "com.typesafe.zinc" % "zinc" % "0.3.15",
+    "org.scala-sbt" %% "zinc" % "1.0.0-X10",
     "ch.qos.logback" % "logback-classic" % "1.1.7"
-)
+  )
 
 unmanagedJars in Compile += file("lib/nailgun-server-0.9.2-SNAPSHOT.jar")
 

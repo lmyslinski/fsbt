@@ -1,6 +1,6 @@
-package root
+package main.root
 
-import root.nested1.NestedClass1
+import main.root.nested1.NestedClass1
 
 /**
   * Created by humblehound on 09.11.16.

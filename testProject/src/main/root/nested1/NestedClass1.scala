@@ -1,4 +1,4 @@
-package root.nested1
+package main.root.nested1
 
 /**
   * Created by humblehound on 09.11.16.

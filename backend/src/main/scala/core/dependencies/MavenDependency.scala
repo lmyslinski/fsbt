@@ -97,6 +97,10 @@ case class MavenDependency(dependency: Dependency) {
     downloadDependency(pomFile, jarFile)
   }
 
+  def getJarFile = {
+    File(s"$fsbtCache/$groupIdParsed/$artifactIdParsed/$versionParsed/$artifactIdParsed.jar")
+  }
+
 
   def stripQuotes(string: String): String = string.replaceAll("^\"|\"$", "")
 }

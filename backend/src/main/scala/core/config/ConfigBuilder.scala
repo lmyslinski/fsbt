@@ -1,11 +1,15 @@
 package core.config
 
+import better.files.File
 import com.martiansoftware.nailgun.NGContext
+import core.dependencies.MavenDependency
 
-class ConfigBuilder(val context: NGContext) {
+import scala.util.matching.Regex
 
-  val configFilePath = context.getWorkingDirectory + "/build.fsbt"
+object ConfigBuilder{
 
+  def build(context: NGContext) = {
+    val configFilePath = context.getWorkingDirectory + "/build.fsbt"
     val config: Map[ConfigEntry.Value, Any] = (for{
       configFileUri <- ConfigValidator.validateConfigFileExists(configFilePath)
       configMap <- ConfigDSL.parseConfigFile(configFilePath)
@@ -13,7 +17,13 @@ class ConfigBuilder(val context: NGContext) {
       configMap <- ConfigValidator.validateConfigFileValues(configMap)
     } yield buildConfig(configMap, context)).get
 
-  def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], context: NGContext): Map[ConfigEntry.Value, Any] = {
+    FsbtConfig(
+      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(MavenDependency),
+      File(config(ConfigEntry.targetDirectory).toString),
+      config(ConfigEntry.workingDir).toString)
+  }
+
+  private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], context: NGContext): Map[ConfigEntry.Value, Any] = {
 
     val defaultConfig = Map(
       (ConfigEntry.workingDir, context.getWorkingDirectory),
@@ -37,6 +47,4 @@ class ConfigBuilder(val context: NGContext) {
     })
   }
 }
-
-
 

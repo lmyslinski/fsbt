@@ -4,10 +4,13 @@ import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
 import context.ContextUtil
-import core.config.{ConfigBuilder, ConfigDSL, ConfigEntry, Dependency}
+import core.config._
 import core.dependencies.MavenDependency
 import org.slf4j.LoggerFactory
-import sbt.inc.ZincUtils
+import sbt.util
+import xsbti.compile.ZincCompilerUtil
+
+//import sbt.inc.ZincUtils
 import sbt.internal.inc.ScalaInstance
 import xsbti.compile.{DependencyChanges, Output}
 
@@ -17,92 +20,82 @@ import scala.util.matching.Regex
 object Fsbt {
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
-  val scalaRegex = new Regex(".scala$")
-  val javaRegex = new Regex(".java$")
-  // parse only top-level class files, omit nested classes
-  val classRegex = new Regex("^[^$]+.class$")
 
-  def recursiveListFiles(path: String, r: Regex): List[File] = {
-    val these = File(path).listRecursively
-    these.filter(f => r.findFirstIn(f.name).isDefined).toList
-  }
+  def compile(args: List[String], config: FsbtConfig): Unit = {
 
-  def compile(args: List[String], config: ConfigBuilder): Unit ={
-    val scalaFilePaths = recursiveListFiles(config.config(ConfigEntry.workingDir).toString, scalaRegex).map( x=> x.path.toAbsolutePath.toString)
-    val javaFilePaths = recursiveListFiles(config.config(ConfigEntry.workingDir).toString, javaRegex).map( x=> x.path.toAbsolutePath.toString)
+    val deps = config.dependencies
 
-    val target = config.config(ConfigEntry.targetDirectory).toString
-    File(target).createIfNotExists(asDirectory = true)
+    logger.debug("Classpath: ")
 
-//    val libJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.8.jar").toJava
-//    val compilerJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.11.8.jar").toJava
-//    val scalaInstance = new ScalaInstance("2.11.8", ClassLoader.getSystemClassLoader, libJar, compilerJar, Array(), None)
-//    val bridgeJar = new File("/home/humblehound/.ivy2/cache/org.scala-sbt/zinc-compile-core_2.11/jars/zinc-compile-core_2.11-1.0.0-X10.jar").toJava
-//
-//    val compiler = ZincUtils.scalaCompiler(scalaInstance, bridgeJar)
+    deps.foreach(f => logger.debug(f.jarFile.path.toString))
 
-    for(file <- scalaFilePaths){
-      println(s"Found source file: $file")
-    }
+    val scalaSourceFiles = config.getScalaSourceFiles
+    val javaSourceFiles = config.getJavaSourceFiles
 
-    for(file <- javaFilePaths){
-      println(s"Found source file: $file")
-    }
+    config.target.createIfNotExists(asDirectory = true)
 
-//    val dependencies = config.config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(p => MavenDependency(p).getJarFile.path.toAbsolutePath.toString)
-    val dependencies = config.config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].foldRight("")((dep, res) => MavenDependency(dep).getJarFile.path.toAbsolutePath.toString + ";" + res) + "."
+    logger.debug("Compiling scala...")
+    val compileScala = List("scalac", "-cp", config.classPath) ++ scalaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
 
-    val compileScala = List("scalac") ++ scalaFilePaths ++ List("-cp", dependencies) ++ List("-d", target)
-    println(compileScala)
+
+
+
+
+    val t0 = System.nanoTime()
     val scalaOutput = compileScala.!!
-    val compileJava = List("javac") ++ javaFilePaths ++ List("-cp", dependencies) ++ List("-d", target)
-    println(compileJava)
+    val t1 = System.nanoTime()
+    logger.debug(s"Elapsed: ${(t1 - t0)/1000000} ms")
+
+    logger.debug("Compiling java...")
+    val compileJava = List("javac", "-cp", config.classPath) ++ javaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
+    val t2 = System.nanoTime()
     val output = compileJava.!!
-    println(output)
-    ()}
+    val t3 = System.nanoTime()
+    logger.debug(s"Elapsed: ${(t3 - t2)/1000000} ms")
+  }
 
-  def run(args: List[String], config: ConfigBuilder): Unit = {
+  def run(args: List[String], config: FsbtConfig): Unit = {
 
-    val targetDir = config.config(ConfigEntry.targetDirectory).toString
-
-    val deps = config.config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]]
-    for (dep1 <- deps){
-      val d = MavenDependency(dep1)
-      println(d.baseUri)
-      d.downloadDependencies
-    }
-
-    ConfigDSL.parseConfigFile(config.configFilePath)
-    val targetClasses = recursiveListFiles(targetDir, classRegex)
-    val ctx = ContextUtil.identifyContext(targetClasses)
-
-    if(ctx.isEmpty){
+    val ctx = ContextUtil.identifyContext(config.getTargetClasses)
+    println(ctx)
+    if (ctx.isEmpty) {
       println("No context were found")
-    }else{
-      ctx(0).run(targetDir)
+    } else {
+      ctx.head.run(config.target)
     }
   }
 
-  def clean(config: ConfigBuilder) = {
-    val target = File(config.config(ConfigEntry.targetDirectory).asInstanceOf[String])
-    for(file <- target.list){
-      println(file.path)
+  def test(config: FsbtConfig): Unit = {
+
+    val targetClasses = config.getTargetClasses.map(_.toString())
+    val command = List("java",  "-cp", config.classPath + "/home/humblehound/Dev/fsbt/testProject/target/test/java/TestJunit.class") ++ List("org.junit.runner.JUnitCore", "test.java.TestJunit")
+    println(command)
+    val output = command.lineStream
+    output.foreach(println)
+  }
+
+  def clean(config: FsbtConfig): Unit = {
+    for (file <- config.target.list) {
       file.delete()
     }
   }
 
-  def nailMain(context: NGContext): Unit ={
+  def nailMain(context: NGContext): Unit = {
 
-    val config = new ConfigBuilder(context)
+    val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
 
-    if (args.isEmpty){
+    if (args.isEmpty) {
       println("Printing info")
-    } else args.head match {
+    } else
+    args.foreach {
       case "compile" => compile(args, config)
-      case "run" => run(args, config)
+      case "test" => test(config)
+      case "run" =>
+        compile(args, config)
+        run(args, config)
       case "clean" => clean(config)
-      case unknown => println ("command not found: " + unknown)
+      case unknown => println("command not found: " + unknown)
     }
   }
 

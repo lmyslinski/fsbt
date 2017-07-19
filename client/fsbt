@@ -1,2 +1,2 @@
 #!/bin/bash
-ng core.Fsbt "$@"
+ng-nailgun core.Fsbt "$@"

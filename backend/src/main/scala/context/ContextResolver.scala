@@ -1,4 +1,6 @@
 package context
+import better.files.File
+
 import scala.sys.process._
 
 /**
@@ -13,9 +15,9 @@ class ContextResolver {
   var className: Option[String] = None
   var superClass: Option[String] = None
 
-  def run(targetDir: String): Unit = {
+  def run(target: File): Unit = {
     val cls = transformClassFormat(className.get)
-    val command = List("scala",  "-cp", targetDir, cls)
+    val command = List("scala",  "-cp", target.toString(), cls)
     val output = command.lineStream
     output.foreach(println)
   }

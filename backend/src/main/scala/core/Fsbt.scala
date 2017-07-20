@@ -1,33 +1,32 @@
 package core
 
-import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
 import context.ContextUtil
 import core.config._
-import core.dependencies.MavenDependency
 import org.slf4j.LoggerFactory
-import sbt.util
-import xsbti.compile.ZincCompilerUtil
-
-//import sbt.inc.ZincUtils
-import sbt.internal.inc.ScalaInstance
-import xsbti.compile.{DependencyChanges, Output}
+import xsbti.compile.{IncrementalCompiler, ZincCompilerUtil}
 
 import scala.sys.process._
-import scala.util.matching.Regex
 
 object Fsbt {
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
+  val compiler: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
+
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
     val deps = config.dependencies
 
+    val classPath = deps.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
+
     logger.debug("Classpath: ")
 
-    deps.foreach(f => logger.debug(f.jarFile.path.toString))
+
+    deps.sortWith((a, b) => s"${a.groupIdParsed}/${a.artifactIdParsed}/${a.versionParsed}"
+      .compare(s"${b.groupIdParsed}/${b.artifactIdParsed}/${b.versionParsed}") < 0)
+      .foreach(f => logger.debug(f.jarFile.path.toString))
 
     val scalaSourceFiles = config.getScalaSourceFiles
     val javaSourceFiles = config.getJavaSourceFiles
@@ -35,10 +34,7 @@ object Fsbt {
     config.target.createIfNotExists(asDirectory = true)
 
     logger.debug("Compiling scala...")
-    val compileScala = List("scalac", "-cp", config.classPath) ++ scalaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
-
-
-
+    val compileScala = List("scalac", "-cp", classPath) ++ scalaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
 
 
     val t0 = System.nanoTime()
@@ -47,7 +43,7 @@ object Fsbt {
     logger.debug(s"Elapsed: ${(t1 - t0)/1000000} ms")
 
     logger.debug("Compiling java...")
-    val compileJava = List("javac", "-cp", config.classPath) ++ javaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
+    val compileJava = List("javac", "-cp", classPath) ++ javaSourceFiles ++ List("-d", config.target.toJava.getAbsolutePath)
     val t2 = System.nanoTime()
     val output = compileJava.!!
     val t3 = System.nanoTime()
@@ -68,7 +64,7 @@ object Fsbt {
   def test(config: FsbtConfig): Unit = {
 
     val targetClasses = config.getTargetClasses.map(_.toString())
-    val command = List("java",  "-cp", config.classPath + "/home/humblehound/Dev/fsbt/testProject/target/test/java/TestJunit.class") ++ List("org.junit.runner.JUnitCore", "test.java.TestJunit")
+    val command = List("java",  "-cp", "/home/humblehound/Dev/fsbt/testProject/target/test/java/TestJunit.class") ++ List("org.junit.runner.JUnitCore", "test.java.TestJunit")
     println(command)
     val output = command.lineStream
     output.foreach(println)

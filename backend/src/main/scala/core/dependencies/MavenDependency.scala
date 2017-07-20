@@ -54,22 +54,34 @@ case class MavenDependency(dependency: Dependency) {
 
     if(transitive && pomFile.exists){
       val pom = XML.loadFile(pomFile.toJava)
-      val transitiveDependencies = (pom \ "dependencies" \ "dependency")
+      val transitiveDependencies = pom \ "dependencies" \ "dependency"
+//      logger.debug(s"Transitive deps:")
+//      logger.debug(s"$transitiveDependencies")
+      val filteredDependencies = (pom \ "dependencies" \ "dependency")
         .filter{
-          dependency => !((dependency \ "scope").text match{
+          dependency => (dependency \ "scope").text match {
             case "" => true
             case "compile" => true
             case _ => false
-          })
-        }.map { dependency =>
+          }
+        }.filter {
+        dependency => (dependency \ "optional").text match {
+          case "true" => false
+          case _ => true
+        }
+      }.
+      map { dependency =>
         val groupId = (dependency \ "groupId").text.replace('.', '/')
         val artifactId = (dependency \ "artifactId").text
         val version = (dependency \ "version").text
         MavenDependency(Dependency(groupId, artifactId, version, withScalaVersion = false))
       }.filter{p => p != this}
 
-      if(transitiveDependencies.nonEmpty){
-        Seq(this) ++ transitiveDependencies.flatMap(_.resolve(false))
+//      logger.debug(s"Filtered deps:")
+//      logger.debug(s"$filteredDependencies")
+
+      if(filteredDependencies.nonEmpty){
+        Seq(this) ++ filteredDependencies.flatMap(_.resolve(false))
       }else{
         Seq(this)
       }
@@ -99,6 +111,7 @@ case class MavenDependency(dependency: Dependency) {
 
   def downloadJar(jarFile: File): File ={
     try{
+      logger.debug(s"Downloading $jarUrl")
       val jarWebsite = new URL(jarUrl)
       val in2 = jarWebsite.openConnection().getInputStream
       Files.copy(in2, jarFile.path, StandardCopyOption.REPLACE_EXISTING)
@@ -111,6 +124,7 @@ case class MavenDependency(dependency: Dependency) {
   def downloadPom(pomFile: File): File = {
 
     try{
+      logger.debug(s"Downloading $pomUrl")
       val website = new URL(pomUrl)
       val in = website.openConnection().getInputStream
       pomFile.parent.createDirectories()

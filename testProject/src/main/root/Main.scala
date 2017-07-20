@@ -1,7 +1,7 @@
 package main.root
 
 import main.root.nested1.NestedClass1
-import xsbti.compile.ZincCompilerUtil
+import xsbti.compile.{IncrementalCompiler, ZincCompilerUtil}
 
 /**
   * Created by humblehound on 09.11.16.

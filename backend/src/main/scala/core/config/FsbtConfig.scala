@@ -26,6 +26,4 @@ case class FsbtConfig(topLevelDependencies: List[MavenDependency], target: File,
   def getTargetClasses = recursiveListFiles(target.toString(), classRegex)
   def dependencies = topLevelDependencies.flatMap(_.resolve(true))
 
-  lazy val classPath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
-
 }

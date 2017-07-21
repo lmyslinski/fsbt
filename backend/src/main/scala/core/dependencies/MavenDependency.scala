@@ -1,42 +1,39 @@
 package core.dependencies
-import java.io._
-import java.net.URL
-import java.nio.file.{Files, StandardCopyOption}
-import java.util.stream.Collectors
 
 import better.files.File
 import com.typesafe.scalalogging.Logger
-import core.config.Dependency
+import core.config.{Dependency, FsbtConfig}
 import org.slf4j.LoggerFactory
 
-import scala.xml.{Source, XML}
+// exclusions are not supported for now
+class MavenDependency(
+  val groupId: String,
+  val artifactId: String,
+  val version: Option[String] = None,
+  val withScalaVersion: Boolean = false,
+  val scope: MavenDependencyScope.Value = MavenDependencyScope.Compile) {
 
-import scala.language.implicitConversions
+  override def toString: String = descriptor
 
-// TODO : Add pom parent support
-// TODO : Add scoping(compile, test, runtime)
-case class MavenDependency(dependency: Dependency) {
+  def this(dependency: Dependency) = this(
+    MavenDependency.stripQuotes(dependency.group).replace('.', '/'),
+    MavenDependency.stripQuotes(dependency.artifact),
+    Some(MavenDependency.stripQuotes(dependency.version)),
+    withScalaVersion = dependency.withScalaVersion
+  )
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
+  val pomFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/pom.xml")
+  val jarFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/$artifactId.jar")
+  val descriptor = s"$groupId/$artifactId/${version.get}"
 
-  val mavenCentral = "http://central.maven.org/maven2"
-  val fsbtPath = System.getProperty("user.home") + "/.fsbt"
-  val fsbtCache = s"$fsbtPath/cache"
-  val scalaVersion = "_2.12"
+  val baseUri: String = if (withScalaVersion) {
 
-  val groupIdParsed: String = stripQuotes(dependency.group.replace('.','/'))
-  val artifactIdParsed: String = stripQuotes(dependency.artifact)
-  val versionParsed: String = stripQuotes(dependency.version)
+    val core = s"${MavenDependency.mavenCentral}/$groupId/$artifactId"
 
-  val pomFile = File(s"$fsbtCache/$groupIdParsed/$artifactIdParsed/$versionParsed/pom.xml")
-  val jarFile = File(s"$fsbtCache/$groupIdParsed/$artifactIdParsed/$versionParsed/$artifactIdParsed.jar")
-
-  val descriptor = s"$groupIdParsed/$artifactIdParsed/$versionParsed"
-
-  val baseUri: String = if (dependency.withScalaVersion) {
-    s"$mavenCentral/$groupIdParsed/$artifactIdParsed$scalaVersion/$versionParsed/$artifactIdParsed$scalaVersion-$versionParsed"
+    s"${MavenDependency.mavenCentral}/$groupId/$artifactId${FsbtConfig.scalaVersion}/${version.get}/$artifactId${FsbtConfig.scalaVersion}-${version.get}"
   } else {
-    s"$mavenCentral/$groupIdParsed/$artifactIdParsed/$versionParsed/$artifactIdParsed-$versionParsed"
+    s"${MavenDependency.mavenCentral}/$groupId/$artifactId/${version.get}/$artifactId-${version.get}"
   }
 
   val pomUrl = s"$baseUri.pom"
@@ -44,12 +41,17 @@ case class MavenDependency(dependency: Dependency) {
 
   override def equals(obj: scala.Any): Boolean = {
     val otherDep = obj.asInstanceOf[MavenDependency]
-    otherDep.artifactIdParsed.equals(artifactIdParsed) &&
-      otherDep.groupIdParsed.equals(groupIdParsed) &&
-      otherDep.versionParsed.equals(versionParsed)
+    otherDep.artifactId.equals(artifactId) &&
+      otherDep.groupId.equals(groupId) &&
+      otherDep.version.equals(version)
   }
+
+
 }
 
+object MavenDependency {
+  val mavenCentral = "http://central.maven.org/maven2"
 
-
+  def stripQuotes(string: String): String = string.replaceAll("^\"|\"$", "")
+}
 

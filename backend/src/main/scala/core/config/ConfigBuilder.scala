@@ -4,8 +4,6 @@ import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import core.dependencies.MavenDependency
 
-import scala.util.matching.Regex
-
 object ConfigBuilder{
 
   def build(context: NGContext) = {
@@ -17,8 +15,8 @@ object ConfigBuilder{
       configMap <- ConfigValidator.validateConfigFileValues(configMap)
     } yield buildConfig(configMap, context)).get
 
-    FsbtConfig(
-      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(MavenDependency),
+    new FsbtConfig(
+      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
       File(config(ConfigEntry.targetDirectory).toString),
       config(ConfigEntry.workingDir).toString)
   }

@@ -8,7 +8,7 @@ import scala.util.matching.Regex
 /**
   * Created by humblehound on 21.07.17.
   */
-case class FsbtConfig(dependencies: List[MavenDependency], target: File, workingDir: String){
+class FsbtConfig(val dependencies: List[MavenDependency], val target: File, workingDir: String){
 
   val scalaRegex = new Regex(".scala$")
   val javaRegex = new Regex(".java$")
@@ -27,5 +27,12 @@ case class FsbtConfig(dependencies: List[MavenDependency], target: File, working
 
   val dependencyManager = new DependencyManager(dependencies)
   lazy val dependencyInfo = dependencyManager.resolveAll()
-
 }
+
+object FsbtConfig {
+  val fsbtPath = System.getProperty("user.home") + "/.fsbt"
+  val fsbtCache = s"$fsbtPath/cache"
+  val scalaVersion = "_2.12"
+}
+
+

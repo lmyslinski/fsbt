@@ -9,7 +9,8 @@ import org.slf4j.LoggerFactory
 class MavenDependency(
   val groupId: String,
   val artifactId: String,
-  val version: Option[String] = None,
+  val version: String,
+  val optional: Boolean = false,
   val withScalaVersion: Boolean = false,
   val scope: MavenDependencyScope.Value = MavenDependencyScope.Compile) {
 
@@ -18,22 +19,22 @@ class MavenDependency(
   def this(dependency: Dependency) = this(
     MavenDependency.stripQuotes(dependency.group).replace('.', '/'),
     MavenDependency.stripQuotes(dependency.artifact),
-    Some(MavenDependency.stripQuotes(dependency.version)),
+    MavenDependency.stripQuotes(dependency.version),
     withScalaVersion = dependency.withScalaVersion
   )
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
   val pomFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/pom.xml")
   val jarFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/$artifactId.jar")
-  val descriptor = s"$groupId/$artifactId/${version.get}"
+  val descriptor = s"$groupId/$artifactId/$version"
 
   val baseUri: String = if (withScalaVersion) {
 
     val core = s"${MavenDependency.mavenCentral}/$groupId/$artifactId"
 
-    s"${MavenDependency.mavenCentral}/$groupId/$artifactId${FsbtConfig.scalaVersion}/${version.get}/$artifactId${FsbtConfig.scalaVersion}-${version.get}"
+    s"${MavenDependency.mavenCentral}/$groupId/$artifactId${FsbtConfig.scalaVersion}/$version/$artifactId${FsbtConfig.scalaVersion}-$version"
   } else {
-    s"${MavenDependency.mavenCentral}/$groupId/$artifactId/${version.get}/$artifactId-${version.get}"
+    s"${MavenDependency.mavenCentral}/$groupId/$artifactId/$version/$artifactId-$version"
   }
 
   val pomUrl = s"$baseUri.pom"

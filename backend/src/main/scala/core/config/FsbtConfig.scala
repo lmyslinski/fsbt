@@ -1,14 +1,14 @@
 package core.config
 
 import better.files.File
-import core.dependencies.{DependencyManager, MavenDependency}
+import core.dependencies.{DependencyResolver, MavenDependency}
 
 import scala.util.matching.Regex
 
 /**
   * Created by humblehound on 21.07.17.
   */
-class FsbtConfig(val dependencies: List[MavenDependency], val target: File, workingDir: String){
+class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, workingDir: String){
 
   val scalaRegex = new Regex(".scala$")
   val javaRegex = new Regex(".java$")
@@ -22,11 +22,11 @@ class FsbtConfig(val dependencies: List[MavenDependency], val target: File, work
 
   def getScalaSourceFiles = recursiveListFiles(workingDir, scalaRegex).map(x => x.path.toAbsolutePath.toString)
   def getJavaSourceFiles = recursiveListFiles(workingDir, javaRegex).map(x => x.path.toAbsolutePath.toString)
-//  def getClasspath = topLevelDependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
+  def getClasspath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
   def getTargetClasses = recursiveListFiles(target.toString(), classRegex)
 
-  val dependencyManager = new DependencyManager(dependencies)
-  lazy val dependencyInfo = dependencyManager.resolveAll()
+  val dependencies: List[MavenDependency] = new DependencyResolver(rawDependencies).resolveAll()
+
 }
 
 object FsbtConfig {

@@ -6,15 +6,18 @@ package core.config
 
 import java.io.FileReader
 
+import core.dependencies.MavenDependency
+
 import scala.util.Try
 import scala.util.parsing.combinator._
 
+//unmanagedJars in Compile += file("lib/nailgun-server-0.9.2-SNAPSHOT.jar")
 
 class ConfigDSL extends JavaTokenParsers {
 
   def configuration = rep(expression)
 
-  def expression = assignment | singleDep | multiDep
+  def expression = assignment | singleDep | multiDep | unmanagedJar
 
   def assignment = ident ~ ":=" ~ stringLiteral ^^ { case (a ~ b ~ c) => MapEntry(a, c) }
 
@@ -27,6 +30,10 @@ class ConfigDSL extends JavaTokenParsers {
   def dependencyWithScala = stringLiteral ~ "%%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e, withScalaVersion = true) }
 
   def dependencyWithoutScala = stringLiteral ~ "%" ~ stringLiteral ~ "%" ~ stringLiteral ^^ { case (a ~ b ~ c ~ d ~ e) => Dependency(a, c, e, withScalaVersion = false) }
+
+  def unmanagedJar = "unmanagedJar" ~ "in" ~ jarScope ~ "+=" ~ stringLiteral ^^ {case (a ~ b ~ c ~ d ~ e) => MapEntry(a, UnmanagedJar(e, c))}
+
+  def jarScope = "Compile" | "Runtime" | "Test"
 
   implicit def toPureString(value: String): PureString = PureString(value.substring(1, value.length() - 1))
 }
@@ -52,5 +59,7 @@ case class PureString(value: String) extends ConfigValue
 case class Dependency(group: String, artifact: String, version: String, withScalaVersion: Boolean) extends ConfigValue
 
 case class DependencyList(dependencies: List[Dependency]) extends ConfigValue
+
+case class UnmanagedJar(path: String, scope: String) extends ConfigValue
 
 case class MapEntry(key: String, value: ConfigValue)

@@ -20,10 +20,23 @@ class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, worki
     these.filter(f => r.findFirstIn(f.name).isDefined).toList
   }
 
-  def getScalaSourceFiles = recursiveListFiles(workingDir, scalaRegex).map(x => x.path.toAbsolutePath.toString)
-  def getJavaSourceFiles = recursiveListFiles(workingDir, javaRegex).map(x => x.path.toAbsolutePath.toString)
-  def getClasspath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
+  val scalaSourceDir = workingDir + "/src/main/scala"
+  val javaSourceDir = workingDir + "/src/main/java"
+  val scalaTestSourceDir = workingDir + "/src/test/scala"
+  val javaTestSourceDir = workingDir + "/src/test/java"
+
+  def getScalaSourceFiles: List[File] = recursiveListFiles(workingDir, scalaRegex)
+  def getJavaSourceFiles: List[File] = recursiveListFiles(workingDir, javaRegex)
+
+
+  def getClasspath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res) + "."
+  def getTestClassPath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res) + s"$target"
+
+  def scalaTarget = File(s"${target}/scala")
+  def javaTarget = File(s"${target}/java")
+
   def getTargetClasses = recursiveListFiles(target.toString(), classRegex)
+  def getTestClasses = recursiveListFiles(s"$target", classRegex)
 
   val dependencies: List[MavenDependency] = new DependencyResolver(rawDependencies).resolveAll()
 

@@ -7,6 +7,7 @@ scalaVersion := "2.12.2"
 libraryDependencies ++=
   Seq(
     "org.scala-sbt" %% "zinc" % "1.0.0-X20",
+    "org.scala-sbt" % "compiler-interface" % "0.13.15",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
     "com.github.pathikrit" %% "better-files" % "2.17.1",

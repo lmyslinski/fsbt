@@ -1,6 +1,7 @@
 package compiler
 
 import java.io.File
+import java.net.URLClassLoader
 import java.util.Optional
 import java.util.function.{Function, Supplier}
 
@@ -11,7 +12,7 @@ import core.config.FsbtConfig
 import org.slf4j.LoggerFactory
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
 import sbt.internal.inc.{AnalyzingCompiler, ScalaInstance, ZincUtil}
-import xsbti.{AnalysisCallback, Position, Problem, Reporter}
+import xsbti._
 import xsbti.compile._
 
 /**
@@ -102,7 +103,24 @@ class ZincCompiler {
 
 
   def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(scalaInstance, new File(""))
-  def scalaInstance = new ScalaInstance("2.12.2", this.getClass.getClassLoader.getParent, new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.2.jar"), new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.2.jar"), Array.empty[File], None)
+  def scalaInstance = {
+
+    val libJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.2.jar")
+    val compileJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.2.jar")
+    val reflectJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.2.jar")
+
+    val allJars = Array(libJar, compileJar, reflectJar)
+
+    def loader = new URLClassLoader(allJars.map(_.toURI.toURL))
+
+    new ScalaInstance("2.12.2", loader, libJar, compileJar, allJars, Option.empty)
+  }
+
+
+
+
+
+
 
   def javaTools = JavaTools(JavaCompiler.fork(), Javadoc.fork())
 

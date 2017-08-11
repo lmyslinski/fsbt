@@ -8,7 +8,7 @@ import scala.util.matching.Regex
 /**
   * Created by humblehound on 21.07.17.
   */
-class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, workingDir: String){
+class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, workingDir: String, val projectName: String){
 
   val scalaRegex = new Regex(".scala$")
   val javaRegex = new Regex(".java$")
@@ -32,11 +32,13 @@ class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, worki
   def getClasspath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res) + "."
   def getTestClassPath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res) + s"$target"
 
+
   def scalaTarget = File(s"${target}/scala")
   def javaTarget = File(s"${target}/java")
 
   def getTargetClasses = recursiveListFiles(target.toString(), classRegex)
   def getTestClasses = recursiveListFiles(s"$target", classRegex)
+  def getAllTargetClasses = recursiveListFiles(s"$target", new Regex(".*\\.class"))
 
   val dependencies: List[MavenDependency] = new DependencyResolver(rawDependencies).resolveAll()
 

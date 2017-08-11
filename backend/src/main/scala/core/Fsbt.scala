@@ -1,5 +1,8 @@
 package core
 
+import java.io.PrintWriter
+
+import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
 import compiler.ZincCompiler
@@ -77,6 +80,20 @@ object Fsbt {
     }
   }
 
+  def createJar(args: List[String], config: FsbtConfig): Unit = {
+    val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
+    mf.parent.createIfNotExists(asDirectory = true, createParents = true)
+    val manifestFile = mf.toJava
+    val pw = new PrintWriter(manifestFile)
+    pw.write("Manifest-Version: 1.0\n")
+    pw.write("Main-Class: main.root.Main\n")
+    pw.write("\n")
+    pw.close()
+    val classes = config.getAllTargetClasses.map(_.pathAsString.split(config.target.pathAsString + '/')(1))
+    val jarCmd = List("jar", "cfm", config.target.toString + s"/${config.projectName}.jar", manifestFile.getPath) ::: classes
+    Process(jarCmd, config.target.toJava).!
+  }
+
   def test(config: FsbtConfig): Unit = {
     val ctx = ContextUtil.identifyContext(config.getTargetClasses)
 //    val command = List("java",  "-cp", config.getTestClassPath) ++ List("org.junit.runner.JUnitCore", "testing.TestJunit")
@@ -105,6 +122,9 @@ object Fsbt {
       case "run" =>
         compile(args, config)
         run(args, config)
+      case "package" =>
+        compile(args, config)
+        createJar(args, config)
       case "clean" => clean(config)
       case unknown => println("command not found: " + unknown)
     }

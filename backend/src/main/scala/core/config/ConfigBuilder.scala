@@ -18,7 +18,7 @@ object ConfigBuilder{
     new FsbtConfig(
       config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
       File(config(ConfigEntry.targetDirectory).toString),
-      config(ConfigEntry.workingDir).toString)
+      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString)
   }
 
   private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], context: NGContext): Map[ConfigEntry.Value, Any] = {

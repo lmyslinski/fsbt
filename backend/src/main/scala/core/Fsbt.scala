@@ -22,51 +22,25 @@ object Fsbt {
 
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
-//    val deps = config.dependencies
-
     DependencyDownloader.resolveAll(config.dependencies)
 
-
-//    val classPath = deps.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + ":" + res)
-
-//    logger.debug(s"Classpath: ${config.getClasspath}" )
-
-//    config.dependencies.sortWith((a, b) => a.descriptor.compare(b.descriptor) < 0).foreach(f => logger.debug(f.toString))
-//    config.dependencies.foreach(p => logger.debug(p.toString))
-
-//    deps.sortWith((a, b) => s"${a.groupIdParsed}/${a.artifactIdParsed}/${a.versionParsed}"
-//      .compare(s"${b.groupIdParsed}/${b.artifactIdParsed}/${b.versionParsed}") < 0)
-//      .foreach(f => logger.debug(f.jarFile.path.toString))
-
     val sourceFiles = config.getScalaSourceFiles ::: config.getJavaSourceFiles
-
     val classPath = config.dependencies.map(_.jarFile)
 
-
     logger.debug("Compiling scala...")
-
-    val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
 
     config.scalaTarget.createIfNotExists(asDirectory = true)
     config.javaTarget.createIfNotExists(asDirectory = true)
 
+    val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
 
+  }
 
-//    val compileScala = List("scalac", "-cp", config.getClasspath) ++ scalaSourceFiles ++ List("-d", config.scalaTarget.toString())
-//    scalaSourceFiles.foreach(println)
+  def main(args: Array[String]): Unit ={
 
-//    val t0 = System.nanoTime()
-//    val scalaOutput = compileScala.!!
-//    val t1 = System.nanoTime()
-//    logger.debug(s"Elapsed: ${(t1 - t0)/1000000} ms")
-
-//    logger.debug("Compiling java...")
-//
-//    val compileJava = List("javac", "-cp", config.getClasspath) ++ javaSourceFiles ++ List("-d", config.javaTarget.toString())
-//    val t2 = System.nanoTime()
-//    val output = compileJava.!!
-//    val t3 = System.nanoTime()
-//    logger.debug(s"Elapsed: ${(t3 - t2)/1000000} ms")
+    val config = ConfigBuilder.build("testProject")
+    val args = List()
+    compile(args, config)
   }
 
   def run(args: List[String], config: FsbtConfig): Unit = {
@@ -79,6 +53,8 @@ object Fsbt {
       ctx.head.run(config.target)
     }
   }
+
+
 
   def createJar(args: List[String], config: FsbtConfig): Unit = {
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")

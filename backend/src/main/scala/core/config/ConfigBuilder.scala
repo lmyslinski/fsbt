@@ -13,7 +13,7 @@ object ConfigBuilder{
       configMap <- ConfigDSL.parseConfigFile(configFilePath)
       configMap <- ConfigValidator.validateConfigFileKeySet(configMap)
       configMap <- ConfigValidator.validateConfigFileValues(configMap)
-    } yield buildConfig(configMap, context)).get
+    } yield buildConfig(configMap, context.getWorkingDirectory)).get
 
     new FsbtConfig(
       config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
@@ -21,12 +21,27 @@ object ConfigBuilder{
       config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString)
   }
 
-  private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], context: NGContext): Map[ConfigEntry.Value, Any] = {
+  def build(workDir: String) = {
+    val configFilePath = workDir + "/build.fsbt"
+    val config: Map[ConfigEntry.Value, Any] = (for{
+      configFileUri <- ConfigValidator.validateConfigFileExists(configFilePath)
+      configMap <- ConfigDSL.parseConfigFile(configFilePath)
+      configMap <- ConfigValidator.validateConfigFileKeySet(configMap)
+      configMap <- ConfigValidator.validateConfigFileValues(configMap)
+    } yield buildConfig(configMap, workDir)).get
+
+    new FsbtConfig(
+      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
+      File(config(ConfigEntry.targetDirectory).toString),
+      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString)
+  }
+
+  private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], workDir: String): Map[ConfigEntry.Value, Any] = {
 
     val defaultConfig = Map(
-      (ConfigEntry.workingDir, context.getWorkingDirectory),
-      (ConfigEntry.sourceDirectory, context.getWorkingDirectory + "/src/"),
-      (ConfigEntry.targetDirectory, context.getWorkingDirectory + "/target/"),
+      (ConfigEntry.workingDir, workDir),
+      (ConfigEntry.sourceDirectory, workDir + "/src/"),
+      (ConfigEntry.targetDirectory, workDir + "/target/"),
       (ConfigEntry.version, "1.0"),
       (ConfigEntry.name, ""),
       (ConfigEntry.dependencyList, "")

@@ -7,11 +7,9 @@ import java.util.function.{Function, Supplier}
 
 import better.files
 import com.typesafe.scalalogging.Logger
-import core.Fsbt
-import core.config.FsbtConfig
 import org.slf4j.LoggerFactory
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
-import sbt.internal.inc.{AnalyzingCompiler, ScalaInstance, ZincUtil}
+import sbt.internal.inc.{AnalyzingCompiler, IncrementalCompilerImpl, ScalaInstance, ZincUtil}
 import xsbti._
 import xsbti.compile._
 
@@ -19,6 +17,7 @@ import xsbti.compile._
   * Created by humblehound on 24.07.17.
   */
 class ZincCompiler {
+
   def compile(classPath: List[files.File], sourceFiles: List[files.File], target: files.File) = {
     val cp = ZincCompilerUtil.defaultIncrementalCompiler()
 
@@ -29,18 +28,12 @@ class ZincCompiler {
     val previousResult = PreviousResult.create(Optional.empty(), Optional.empty())
 
     val inputs = Inputs.create(compilers,
-      CompileOptions.create(
-        classPath.map(_.toJava).toArray,
-        sourceFiles.map(_.toJava).toArray,
-        target.toJava, Array.empty,
-        Array.empty,
-        0,
-        getSourcePositionMapper,
-        CompileOrder.ScalaThenJava),
+      CompileOptions.create().withClasspath(classPath.map(_.toJava).toArray).withClassesDirectory(target.toJava).withSources(sourceFiles.map(_.toJava).toArray),
       setup,
       previousResult)
-
     cp.compile(inputs, getLogger)
+
+//    new IncrementalCompilerImpl().compile(inputs, getLogger)
   }
 
   def getSourcePositionMapper = new Function[Position, Position]() {
@@ -66,7 +59,10 @@ class ZincCompiler {
 
   def getGlobalsCache = new GlobalsCache {
 
-    override def apply(args: Array[String], output: Output, forceNew: Boolean, provider: CachedCompilerProvider, logger: xsbti.Logger, reporter: Reporter): CachedCompiler = new CachedCompiler {override def run(sources: Array[File], changes: DependencyChanges, callback: AnalysisCallback, logger: xsbti.Logger, delegate: Reporter, progress: CompileProgress): Unit = ???
+    override def apply(args: Array[String], output: Output, forceNew: Boolean, provider: CachedCompilerProvider, logger: xsbti.Logger, reporter: Reporter): CachedCompiler = new CachedCompiler {
+      override def run(sources: Array[File], changes: DependencyChanges, callback: AnalysisCallback, logger: xsbti.Logger, delegate: Reporter, progress: CompileProgress): Unit = {
+
+      }
 
       override def commandArguments(sources: Array[File]): Array[String] = Array.empty[String]
     }
@@ -77,7 +73,7 @@ class ZincCompiler {
   def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
 
     override def definesClass(classpathEntry: File): DefinesClass = new DefinesClass {
-      override def apply(className: String): Boolean = true
+      override def apply(className: String): Boolean = false
     }
 
     override def analysis(classpathEntry: File): Optional[CompileAnalysis] = Optional.empty()
@@ -100,9 +96,14 @@ class ZincCompiler {
     override def problems(): Array[Problem] = Array.empty
   }
 
+  val compilerJar = new File("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-bridge_2.12/jars/compiler-bridge_2.12-1.0.0.jar")
 
+  def getBridge = {
+    val qq = ZincUtil.constantBridgeProvider(scalaInstance, compilerJar)
+    qq.fetchCompiledBridge(scalaInstance, getLogger)
+  }
 
-  def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(scalaInstance, new File(""))
+  def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(scalaInstance, getBridge)
   def scalaInstance = {
 
     val libJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.2.jar")
@@ -117,11 +118,5 @@ class ZincCompiler {
   }
 
 
-
-
-
-
-
   def javaTools = JavaTools(JavaCompiler.fork(), Javadoc.fork())
-
 }

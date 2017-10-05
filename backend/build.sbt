@@ -18,5 +18,3 @@ unmanagedJars in Compile += file("lib/nailgun-server-0.9.2-SNAPSHOT.jar")
 //unmanagedJars in Compile += file("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-interface/jars/compiler-interface-1.0.0.jar")
 
 
-
-

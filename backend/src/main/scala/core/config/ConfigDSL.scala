@@ -42,8 +42,12 @@ object ConfigDSL extends ConfigDSL {
 
   def parseConfigFile(uri: String): Try[Map[ConfigEntry.Value, ConfigValue]] = Try {
     parseAll(configuration, new FileReader(uri)) match {
-      case Success(res, _) => res.map(f => (ConfigEntry.withName(f.key), f.value)).toMap
-      case Failure(res, _) => throw new ConfigFileException(res.toString)
+      case Success(res, _) => {
+        res.map(f => (ConfigEntry.withName(f.key), f.value)).toMap
+      }
+      case Failure(res, ab) => {
+        throw new ConfigFileException(res.toString)
+      }
     }
   }
 }

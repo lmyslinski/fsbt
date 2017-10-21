@@ -24,27 +24,25 @@ object Fsbt {
 
     DependencyDownloader.resolveAll(config.dependencies)
 
-    val sourceFiles = config.getScalaSourceFiles ::: config.getJavaSourceFiles
+    val sourceFiles = config.getScalaSourceFiles
+    //::: config.getJavaSourceFiles
     val classPath = config.dependencies.map(_.jarFile)
 
     logger.debug("Compiling scala...")
 
-    config.scalaTarget.createIfNotExists(asDirectory = true)
-    config.javaTarget.createIfNotExists(asDirectory = true)
+    config.target.createIfNotExists(asDirectory = true)
 
     val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
 
   }
 
   def main(args: Array[String]): Unit ={
-
     val config = ConfigBuilder.build("testProject")
     val args = List()
     compile(args, config)
   }
 
   def run(args: List[String], config: FsbtConfig): Unit = {
-
     val ctx = ContextUtil.identifyContext(config.getTargetClasses)
     println(ctx)
     if (ctx.isEmpty) {
@@ -53,8 +51,6 @@ object Fsbt {
       ctx.head.run(config.target)
     }
   }
-
-
 
   def createJar(args: List[String], config: FsbtConfig): Unit = {
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
@@ -72,10 +68,13 @@ object Fsbt {
 
   def test(config: FsbtConfig): Unit = {
     val ctx = ContextUtil.identifyContext(config.getTargetClasses)
-//    val command = List("java",  "-cp", config.getTestClassPath) ++ List("org.junit.runner.JUnitCore", "testing.TestJunit")
-    val command = List("java",  "-cp", config.getTestClassPath) ++ List("org.scalatest.tools.Runner", "-R", s"${config.target}")
 
-    val output = command.!
+//    val junit = List("java",  "-cp", config.getTestClassPath) ++ List("org.junit.runner.JUnitCore")
+//    val scalaTest = List("java",  "-cp", config.getTestClassPath) ++ List("org.scalatest.tools.Runner", "-R", s"${config.target}", "-o")
+
+//    println(command)
+
+//    val output = command.!
   }
 
   def clean(config: FsbtConfig): Unit = {
@@ -94,7 +93,10 @@ object Fsbt {
     } else
     args.foreach {
       case "compile" => compile(args, config)
-      case "test" => test(config)
+      case "test" => {
+        compile(args, config)
+        test(config)
+      }
       case "run" =>
         compile(args, config)
         run(args, config)

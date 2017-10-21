@@ -3,8 +3,7 @@ package scala.scalatesting
 /**
   * Created by humblehound on 22.07.17.
   */
-import collection.mutable.Stack
-import org.scalatest._
+import scala.collection.mutable.Stack
 
 class StackSpec extends FlatSpec {
 

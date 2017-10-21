@@ -7,6 +7,7 @@ import java.util.function.{Function, Supplier}
 
 import better.files
 import com.typesafe.scalalogging.Logger
+import core.config.FsbtConfig
 import org.slf4j.LoggerFactory
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
 import sbt.internal.inc.{AnalyzingCompiler, IncrementalCompilerImpl, ScalaInstance, ZincUtil}
@@ -23,7 +24,7 @@ class ZincCompiler {
 
     val compilers = Compilers.create(compiler, javaTools)
 
-    val setup = Setup.create(getPerClasspathEntryLookup, false, new File(""), getGlobalsCache, IncOptions.create(), getReporter, Optional.empty(), Array.empty)
+    val setup = Setup.create(getPerClasspathEntryLookup, false, new File(FsbtConfig.zincCache), getGlobalsCache, IncOptions.create(), getReporter, Optional.empty(), Array.empty)
 
     val previousResult = PreviousResult.create(Optional.empty(), Optional.empty())
 
@@ -31,9 +32,9 @@ class ZincCompiler {
       CompileOptions.create().withClasspath(classPath.map(_.toJava).toArray).withClassesDirectory(target.toJava).withSources(sourceFiles.map(_.toJava).toArray),
       setup,
       previousResult)
-    cp.compile(inputs, getLogger)
+    val cr = cp.compile(inputs, getLogger)
+    logger.debug(cr.toString)
 
-//    new IncrementalCompilerImpl().compile(inputs, getLogger)
   }
 
   def getSourcePositionMapper = new Function[Position, Position]() {
@@ -73,7 +74,10 @@ class ZincCompiler {
   def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
 
     override def definesClass(classpathEntry: File): DefinesClass = new DefinesClass {
-      override def apply(className: String): Boolean = false
+      override def apply(className: String): Boolean = {
+        logger.debug(s"checking $className on classpath")
+        true
+      }
     }
 
     override def analysis(classpathEntry: File): Optional[CompileAnalysis] = Optional.empty()
@@ -81,22 +85,29 @@ class ZincCompiler {
 
   def getReporter = new Reporter {
 
-    override def hasErrors: Boolean = false
+    override def hasErrors: Boolean = true
 
     override def log(problem: Problem): Unit = logger.debug(problem.message())
 
-    override def printSummary(): Unit = ()
+    override def printSummary(): Unit = {
+      logger.debug("Printing summary")
+    }
 
-    override def hasWarnings: Boolean = false
+    override def hasWarnings: Boolean = true
 
-    override def reset(): Unit = ()
+    override def reset(): Unit = {
+      logger.debug("Reset called")
+    }
 
-    override def comment(pos: Position, msg: String): Unit = ()
+    override def comment(pos: Position, msg: String): Unit = {
+        logger.debug(s"Comment at $pos: $msg")
+    }
 
     override def problems(): Array[Problem] = Array.empty
   }
 
-  val compilerJar = new File("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-bridge_2.12/jars/compiler-bridge_2.12-1.0.0.jar")
+
+  val compilerJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
 
   def getBridge = {
     val qq = ZincUtil.constantBridgeProvider(scalaInstance, compilerJar)
@@ -106,9 +117,9 @@ class ZincCompiler {
   def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(scalaInstance, getBridge)
   def scalaInstance = {
 
-    val libJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.2.jar")
-    val compileJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.2.jar")
-    val reflectJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.2.jar")
+    val libJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.2.jar")
+    val compileJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-compiler\\jars\\scala-compiler-2.12.2.jar")
+    val reflectJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.2.jar")
 
     val allJars = Array(libJar, compileJar, reflectJar)
 

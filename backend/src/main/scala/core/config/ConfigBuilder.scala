@@ -18,7 +18,9 @@ object ConfigBuilder{
     new FsbtConfig(
       config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
       File(config(ConfigEntry.targetDirectory).toString),
-      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString)
+      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString,
+      System.getProperty("os.name")
+      )
   }
 
   def build(workDir: String) = {
@@ -33,7 +35,8 @@ object ConfigBuilder{
     new FsbtConfig(
       config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
       File(config(ConfigEntry.targetDirectory).toString),
-      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString)
+      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString,
+      System.getProperty("os.name"))
   }
 
   private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], workDir: String): Map[ConfigEntry.Value, Any] = {

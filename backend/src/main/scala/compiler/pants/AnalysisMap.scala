@@ -5,27 +5,16 @@
 
 package compiler.pants
 
+
 import java.io.{File, IOException}
 import java.util.Optional
 
 import scala.compat.java8.OptionConverters._
-
-import sbt.internal.inc.{
-Analysis,
-CompanionsStore,
-Locate
-}
+import Cache._
+import sbt.internal.inc.{Analysis, CompanionsStore, Locate}
 import sbt.util.Logger
 import xsbti.api.Companions
-import xsbti.compile.{
-AnalysisContents,
-AnalysisStore,
-CompileAnalysis,
-DefinesClass,
-FileAnalysisStore,
-MiniSetup,
-PerClasspathEntryLookup
-}
+import xsbti.compile.{AnalysisContents, AnalysisStore, CompileAnalysis, DefinesClass, FileAnalysisStore, MiniSetup, PerClasspathEntryLookup}
 
 /**
   * A facade around the analysis cache to:
@@ -119,7 +108,7 @@ class AnalysisMap private[AnalysisMap] (
   private def cacheLookup(cacheFPrint: FileFPrint): Option[CompileAnalysis] =
     AnalysisMap.analysisCache.getOrElseUpdate(cacheFPrint) {
       // re-fingerprint the file on miss, to ensure that analysis hasn't changed since we started
-      if (!FileFPrint.fprint(cacheFPrint.file).exists(_ == cacheFPrint)) {
+      if (!FileFPrint.fprint(cacheFPrint.file).contains(cacheFPrint)) {
         throw new IOException(s"Analysis at $cacheFPrint has changed since startup!")
       }
       mkFileAnalysisStore(cacheFPrint.file).get().asScala

@@ -1,16 +1,21 @@
 package core
 
 import java.io.PrintWriter
+import java.{io, util}
+import java.util.Optional
+import java.util.function.Supplier
 
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
 import compiler.ZincCompiler
+import compiler.pants.{AnalysisMap, AnalysisOptions, ConsoleOptions, InputUtils, SbtJars, ScalaLocation}
 import context.ContextUtil
 import core.config._
 import core.dependencies.DependencyDownloader
 import org.slf4j.LoggerFactory
-import xsbti.compile.{IncrementalCompiler, ZincCompilerUtil}
+import sbt.util.Level
+import xsbti.compile.{PreviousResult, ZincCompilerUtil}
 
 import scala.sys.process._
 
@@ -18,7 +23,7 @@ object Fsbt {
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
-  val compiler: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
+//  val compiler: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
 
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
@@ -33,8 +38,67 @@ object Fsbt {
     config.target.createIfNotExists(asDirectory = true)
 
     val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
-
   }
+
+  val compilerJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
+
+  val libJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.3.jar")
+
+  val reflectJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.3.jar")
+
+  val allJars = Array(libJar, compilerJar, reflectJar)
+
+  val zincCache = new java.io.File("C:\\Users\\lukaszmy\\.fsbt\\zincCache")
+
+  val scalaDir = new java.io.File("C:\\Program Files (x86)\\scala")
+
+  def compilePants(args: List[String], config: FsbtConfig) = {
+
+    DependencyDownloader.resolveAll(config.dependencies)
+
+    val sourceFiles = config.getScalaSourceFiles
+    //::: config.getJavaSourceFiles
+    val classPath = config.dependencies.map(_.jarFile)
+
+//    logger.debug("Compiling scala...")
+
+    config.target.createIfNotExists(asDirectory = true)
+
+    val scalaPath: java.io.File = new java.io.File("C:\\Program Files (x86)\\scala\\lib")
+
+    val logger = getLogger
+
+    val sources = config.getScalaSourceFiles.map(_.toJava).toSeq
+
+    val sbtJars = SbtJars.apply(Option.apply(compilerJar), Option.apply(libJar))
+
+    val scalaLocation = ScalaLocation.create(scalaPath, new util.ArrayList[java.io.File](){scalaPath}, compilerJar, libJar, new util.ArrayList[java.io.File](){reflectJar} )
+
+    val settings = compiler.pants.Settings(
+      consoleLog = ConsoleOptions(Level.Debug),
+      _sources = sources,
+      sbt = sbtJars,
+      _zincCacheDir = Option.apply(zincCache),
+      scala = scalaLocation)
+
+
+
+    //    consoleLog = ConsoleOptions(Level.Debug),
+    //    _classesDirectory = Some(config.target),
+    //    scala = ScalaLocation.fromPath(new java.util.ArrayList(){scalaPath}
+
+    val amap = AnalysisMap.create(AnalysisOptions())
+
+    val pr = PreviousResult.create(Optional.empty(), Optional.empty())
+
+    sbt.util.Logger
+
+    val input = InputUtils.create(settings, amap, pr, logger)
+
+    val cp = ZincCompilerUtil.defaultIncrementalCompiler()
+    cp.compile(input, logger)
+  }
+
 
   def main(args: Array[String]): Unit ={
     val config = ConfigBuilder.build("testProject")
@@ -92,13 +156,13 @@ object Fsbt {
       println("Printing info")
     } else
     args.foreach {
-      case "compile" => compile(args, config)
+      case "compile" => compilePants(args, config)
       case "test" => {
         compile(args, config)
         test(config)
       }
       case "run" =>
-        compile(args, config)
+        compilePants(args, config)
         run(args, config)
       case "package" =>
         compile(args, config)
@@ -108,4 +172,20 @@ object Fsbt {
     }
   }
 
-}
+    def getLogger: xsbti.Logger = {
+      new xsbti.Logger {
+
+        override def debug(msg: Supplier[String]): Unit = logger.debug(msg.get())
+
+        override def error(msg: Supplier[String]): Unit = logger.error(msg.get())
+
+        override def warn(msg: Supplier[String]): Unit = logger.warn(msg.get())
+
+        override def trace(exception: Supplier[Throwable]): Unit = logger.trace("", exception.get())
+
+        override def info(msg: Supplier[String]): Unit = logger.info(msg.get())
+      }
+    }
+
+
+  }

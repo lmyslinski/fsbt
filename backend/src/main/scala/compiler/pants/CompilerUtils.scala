@@ -7,9 +7,11 @@ package compiler.pants
 import java.io.File
 import java.net.URLClassLoader
 
+import Cache._
 import sbt.internal.inc.classpath.ClassLoaderCache
 import sbt.internal.inc.{AnalyzingCompiler, RawCompiler, ScalaInstance, ZincUtil}
 import sbt.io.Path
+import sbt.io.syntax._
 import sbt.util.Logger
 import xsbti.compile.{ClasspathOptionsUtil, CompilerCache, Compilers, GlobalsCache, ZincCompilerUtil, ScalaInstance => XScalaInstance}
 
@@ -76,6 +78,7 @@ object CompilerUtils {
    * Create the scala instance for the compiler. Includes creating the classloader.
    */
   def scalaInstance(setup: CompilerCacheKey): XScalaInstance = {
+    import setup.{scalaCompiler, scalaExtra, scalaLibrary}
     val allJars = scalaLibrary +: scalaCompiler +: scalaExtra
     val loader = scalaLoader(allJars)
     val version = scalaVersion(loader)
@@ -100,11 +103,11 @@ object CompilerUtils {
   }
 
   /**
-   * Get the compiler interface for this compiler setup. Compile it if not already cached.
-   * NB: This usually occurs within the compilerCache entry lock, but in the presence of
-   * multiple zinc processes (ie, without nailgun) we need to be more careful not to clobber
-   * another compilation attempt.
-   */
+    * Get the compiler interface for this compiler setup. Compile it if not already cached.
+    * NB: This usually occurs within the compilerCache entry lock, but in the presence of
+    * multiple zinc processes (ie, without nailgun) we need to be more careful not to clobber
+    * another compilation attempt.
+    */
   def compilerInterface(setup: CompilerCacheKey, scalaInstance: XScalaInstance, log: Logger): File = {
     def compile(targetJar: File): Unit =
       AnalyzingCompiler.compileSources(

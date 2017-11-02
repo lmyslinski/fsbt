@@ -107,7 +107,7 @@ class ZincCompiler {
   }
 
 
-  val compilerJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
+  val compilerJar = new File("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-bridge_2.12/jars/compiler-bridge_2.12-1.0.0.jar")
 
   def getBridge = {
     val qq = ZincUtil.constantBridgeProvider(scalaInstance, compilerJar)
@@ -117,9 +117,9 @@ class ZincCompiler {
   def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(scalaInstance, getBridge)
   def scalaInstance = {
 
-    val libJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.2.jar")
-    val compileJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-compiler\\jars\\scala-compiler-2.12.2.jar")
-    val reflectJar = new File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.2.jar")
+    val libJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.2.jar")
+    val compileJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-compiler/jars/scala-compiler-2.12.2.jar")
+    val reflectJar = new File("/home/humblehound/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.2.jar")
 
     val allJars = Array(libJar, compileJar, reflectJar)
 

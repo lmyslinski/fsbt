@@ -51,7 +51,8 @@ object CompilerUtils {
     val setup = CompilerCacheKey(settings)
     compilerCache.getOrElseUpdate(setup) {
       val instance     = scalaInstance(setup)
-      val interfaceJar = compilerInterface(setup, instance, log)
+      val interfaceJar = new File("/home/humblehound/Dev/fsbt/backend/lib/compiler-bridge_2.12-1.0.0.jar")
+//        compilerInterface(setup, instance, log)
       val scalac       = newScalaCompiler(instance, interfaceJar)
       ZincUtil.compilers(instance, ClasspathOptionsUtil.auto, setup.javaHome, scalac)
     }

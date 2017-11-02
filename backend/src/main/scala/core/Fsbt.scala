@@ -14,6 +14,7 @@ import context.ContextUtil
 import core.config._
 import core.dependencies.DependencyDownloader
 import org.slf4j.LoggerFactory
+import sbt.internal.inc.ZincUtil
 import sbt.util.Level
 import xsbti.compile.{PreviousResult, ZincCompilerUtil}
 
@@ -40,21 +41,32 @@ object Fsbt {
     val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
   }
 
-  val compilerJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
+//  val compilerJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
+//
+//  val libJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.3.jar")
+//
+//  val reflectJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.3.jar")
 
-  val libJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.3.jar")
+//  val allJars = Array(libJar, compilerJar, reflectJar)
 
-  val reflectJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.3.jar")
+  val zincCache = new java.io.File("/home/humblehound/Dev/fsbt/testProject/target")
 
-  val allJars = Array(libJar, compilerJar, reflectJar)
-
-  val zincCache = new java.io.File("C:\\Users\\lukaszmy\\.fsbt\\zincCache")
+  val zincCacheFile = new java.io.File("/home/humblehound/Dev/fsbt/testProject/target/zincCache")
 
   val scalaDir = new java.io.File("C:\\Program Files (x86)\\scala")
 
-  def compilePants(args: List[String], config: FsbtConfig) = {
+  def compilePants(args: List[String], config: FsbtConfig): Unit = {
 
     DependencyDownloader.resolveAll(config.dependencies)
+
+    def urlses(cl: ClassLoader): Array[java.net.URL] = cl match {
+      case null => Array()
+      case u: java.net.URLClassLoader => u.getURLs() ++ urlses(cl.getParent)
+      case _ => urlses(cl.getParent)
+    }
+
+    val  urls = urlses(getClass.getClassLoader)
+    println(urls.filterNot(_.toString.contains("ivy")).mkString("\n"))
 
     val sourceFiles = config.getScalaSourceFiles
     //::: config.getJavaSourceFiles
@@ -66,37 +78,38 @@ object Fsbt {
 
     val scalaPath: java.io.File = new java.io.File("C:\\Program Files (x86)\\scala\\lib")
 
-    val logger = getLogger
+    val zincLogger = getLogger
 
     val sources = config.getScalaSourceFiles.map(_.toJava).toSeq
 
-    val sbtJars = SbtJars.apply(Option.apply(compilerJar), Option.apply(libJar))
+    val sbtJars = SbtJars.apply(
+      Some(new java.io.File("/home/humblehound/Dev/fsbt/backend/lib/scala-compiler-2.12.4.jar")),
+      Some(new java.io.File("/home/humblehound/Dev/fsbt/backend/lib/compiler-bridge_2.12-1.0.0.jar")))
 
-    val scalaLocation = ScalaLocation.create(scalaPath, new util.ArrayList[java.io.File](){scalaPath}, compilerJar, libJar, new util.ArrayList[java.io.File](){reflectJar} )
+    val scalaLocation = ScalaLocation.fromHome(new java.io.File("/opt/scala-2.12.4"))
+
+//    val scalaLocation = ScalaLocation.create(scalaPath, new util.ArrayList[java.io.File](){scalaPath}, compilerJar, libJar, new util.ArrayList[java.io.File](){reflectJar} )
+
+    val amap = AnalysisMap.create(AnalysisOptions(Option(zincCacheFile)))
 
     val settings = compiler.pants.Settings(
       consoleLog = ConsoleOptions(Level.Debug),
       _sources = sources,
+      _classesDirectory = Option(zincCache),
       sbt = sbtJars,
       _zincCacheDir = Option.apply(zincCache),
+      analysis = AnalysisOptions(Option(zincCacheFile)),
       scala = scalaLocation)
 
 
-
-    //    consoleLog = ConsoleOptions(Level.Debug),
-    //    _classesDirectory = Some(config.target),
-    //    scala = ScalaLocation.fromPath(new java.util.ArrayList(){scalaPath}
-
-    val amap = AnalysisMap.create(AnalysisOptions())
-
     val pr = PreviousResult.create(Optional.empty(), Optional.empty())
 
-    sbt.util.Logger
+    val input = InputUtils.create(settings, amap, pr, zincLogger)
 
-    val input = InputUtils.create(settings, amap, pr, logger)
+    val cp = new sbt.internal.inc.IncrementalCompilerImpl()
+    val cr = cp.compile(input, zincLogger)
+    logger.debug(cr.toString)
 
-    val cp = ZincCompilerUtil.defaultIncrementalCompiler()
-    cp.compile(input, logger)
   }
 
 

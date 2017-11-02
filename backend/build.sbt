@@ -6,7 +6,7 @@ libraryDependencies ++=
     "org.scala-sbt" %% "zinc" % "1.0.0",
     "org.scala-sbt" %% "io" % "1.1.0",
 
-    "org.scala-sbt" % "util-logging_2.12" % "1.0.2",
+    "org.scala-sbt" %% "util-logging" % "1.0.2",
     "org.scala-sbt" %% "compiler-bridge" % "1.0.0",
     "org.scala-sbt" % "compiler-interface" % "1.0.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
@@ -19,11 +19,6 @@ libraryDependencies ++=
     "com.google.code.findbugs" % "jsr305" % "3.0.2"
   )
 
-
-//' 3 rdparty / jvm / com / fasterxml / jackson / module: scala ',
-
-//libraryDependencies += "com.google.guava" % "guava" % "12.0"
+mainClass in (Compile, run) := Some("com.martiansoftware.nailgun.NGServer")
 
 unmanagedJars in Compile += file("lib/nailgun-server-0.9.2-SNAPSHOT.jar")
-//unmanagedJars in Compile += file("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-bridge_2.12/jars/compiler-bridge_2.12-1.0.0.jar")
-//unmanagedJars in Compile += file("/home/humblehound/.ivy2/cache/org.scala-sbt/compiler-interface/jars/compiler-interface-1.0.0.jar")

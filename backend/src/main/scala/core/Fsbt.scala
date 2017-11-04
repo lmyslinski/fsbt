@@ -38,7 +38,10 @@ object Fsbt {
 
     config.target.createIfNotExists(asDirectory = true)
 
-    val cp = new ZincCompiler().compile(classPath, sourceFiles, config.target)
+    val cp = new ZincCompiler()
+
+    val cr = cp.compile(classPath, sourceFiles, config.target)
+    logger.debug(cr.toString)
   }
 
 //  val compilerJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
@@ -65,9 +68,6 @@ object Fsbt {
       case _ => urlses(cl.getParent)
     }
 
-    val  urls = urlses(getClass.getClassLoader)
-    println(urls.filterNot(_.toString.contains("ivy")).mkString("\n"))
-
     val sourceFiles = config.getScalaSourceFiles
     //::: config.getJavaSourceFiles
     val classPath = config.dependencies.map(_.jarFile)
@@ -88,6 +88,8 @@ object Fsbt {
 
     val scalaLocation = ScalaLocation.fromHome(new java.io.File("/opt/scala-2.12.4"))
 
+
+
 //    val scalaLocation = ScalaLocation.create(scalaPath, new util.ArrayList[java.io.File](){scalaPath}, compilerJar, libJar, new util.ArrayList[java.io.File](){reflectJar} )
 
     val amap = AnalysisMap.create(AnalysisOptions(Option(zincCacheFile)))
@@ -100,7 +102,6 @@ object Fsbt {
       _zincCacheDir = Option.apply(zincCache),
       analysis = AnalysisOptions(Option(zincCacheFile)),
       scala = scalaLocation)
-
 
     val pr = PreviousResult.create(Optional.empty(), Optional.empty())
 
@@ -169,7 +170,7 @@ object Fsbt {
       println("Printing info")
     } else
     args.foreach {
-      case "compile" => compilePants(args, config)
+      case "compile" => compile(args, config)
       case "test" => {
         compile(args, config)
         test(config)

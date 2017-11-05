@@ -17,7 +17,7 @@ class ContextResolver {
 
   def run(target: File): Unit = {
     val cls = transformClassFormat(className.get)
-    val command = List("java",  "-cp", target.toString(), cls)
+    val command = List("scala",  "-cp", target.toString(), cls)
     val output = command.lineStream
     output.foreach(println)
   }

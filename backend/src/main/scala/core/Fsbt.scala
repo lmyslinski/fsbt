@@ -1,22 +1,16 @@
 package core
 
 import java.io.PrintWriter
-import java.{io, util}
-import java.util.Optional
 import java.util.function.Supplier
 
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.Logger
 import compiler.ZincCompiler
-import compiler.pants.{AnalysisMap, AnalysisOptions, ConsoleOptions, InputUtils, SbtJars, ScalaLocation}
 import context.ContextUtil
 import core.config._
 import core.dependencies.DependencyDownloader
 import org.slf4j.LoggerFactory
-import sbt.internal.inc.ZincUtil
-import sbt.util.Level
-import xsbti.compile.{PreviousResult, ZincCompilerUtil}
 
 import scala.sys.process._
 
@@ -24,14 +18,12 @@ object Fsbt {
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
-//  val compiler: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
-
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
     DependencyDownloader.resolveAll(config.dependencies)
 
     val sourceFiles = config.getScalaSourceFiles
-    //::: config.getJavaSourceFiles
+
     val classPath = config.dependencies.map(_.jarFile)
 
     logger.debug("Compiling scala...")
@@ -43,76 +35,6 @@ object Fsbt {
     val cr = cp.compile(classPath, sourceFiles, config.target)
     logger.debug(cr.toString)
   }
-
-//  val compilerJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-sbt\\compiler-bridge_2.12\\jars\\compiler-bridge_2.12-1.0.0.jar")
-//
-//  val libJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-library\\jars\\scala-library-2.12.3.jar")
-//
-//  val reflectJar = new java.io.File("C:\\Users\\lukaszmy\\.ivy2\\cache\\org.scala-lang\\scala-reflect\\jars\\scala-reflect-2.12.3.jar")
-
-//  val allJars = Array(libJar, compilerJar, reflectJar)
-
-  val zincCache = new java.io.File("/home/humblehound/Dev/fsbt/testProject/target")
-
-  val zincCacheFile = new java.io.File("/home/humblehound/Dev/fsbt/testProject/target/zincCache")
-
-  val scalaDir = new java.io.File("C:\\Program Files (x86)\\scala")
-
-  def compilePants(args: List[String], config: FsbtConfig): Unit = {
-
-    DependencyDownloader.resolveAll(config.dependencies)
-
-    def urlses(cl: ClassLoader): Array[java.net.URL] = cl match {
-      case null => Array()
-      case u: java.net.URLClassLoader => u.getURLs() ++ urlses(cl.getParent)
-      case _ => urlses(cl.getParent)
-    }
-
-    val sourceFiles = config.getScalaSourceFiles
-    //::: config.getJavaSourceFiles
-    val classPath = config.dependencies.map(_.jarFile)
-
-//    logger.debug("Compiling scala...")
-
-    config.target.createIfNotExists(asDirectory = true)
-
-    val scalaPath: java.io.File = new java.io.File("C:\\Program Files (x86)\\scala\\lib")
-
-    val zincLogger = getLogger
-
-    val sources = config.getScalaSourceFiles.map(_.toJava).toSeq
-
-    val sbtJars = SbtJars.apply(
-      Some(new java.io.File("/home/humblehound/Dev/fsbt/backend/lib/scala-compiler-2.12.4.jar")),
-      Some(new java.io.File("/home/humblehound/Dev/fsbt/backend/lib/compiler-bridge_2.12-1.0.0.jar")))
-
-    val scalaLocation = ScalaLocation.fromHome(new java.io.File("/opt/scala-2.12.4"))
-
-
-
-//    val scalaLocation = ScalaLocation.create(scalaPath, new util.ArrayList[java.io.File](){scalaPath}, compilerJar, libJar, new util.ArrayList[java.io.File](){reflectJar} )
-
-    val amap = AnalysisMap.create(AnalysisOptions(Option(zincCacheFile)))
-
-    val settings = compiler.pants.Settings(
-      consoleLog = ConsoleOptions(Level.Debug),
-      _sources = sources,
-      _classesDirectory = Option(zincCache),
-      sbt = sbtJars,
-      _zincCacheDir = Option.apply(zincCache),
-      analysis = AnalysisOptions(Option(zincCacheFile)),
-      scala = scalaLocation)
-
-    val pr = PreviousResult.create(Optional.empty(), Optional.empty())
-
-    val input = InputUtils.create(settings, amap, pr, zincLogger)
-
-    val cp = new sbt.internal.inc.IncrementalCompilerImpl()
-    val cr = cp.compile(input, zincLogger)
-    logger.debug(cr.toString)
-
-  }
-
 
   def main(args: Array[String]): Unit ={
     val config = ConfigBuilder.build("testProject")
@@ -170,13 +92,19 @@ object Fsbt {
       println("Printing info")
     } else
     args.foreach {
-      case "compile" => compile(args, config)
+      case "compile" => {
+        try{
+          compile(args, config)
+        }catch {
+          case ex: Exception => logger.debug("Oops")
+        }
+      }
       case "test" => {
         compile(args, config)
         test(config)
       }
       case "run" =>
-        compilePants(args, config)
+        compile(args, config)
         run(args, config)
       case "package" =>
         compile(args, config)

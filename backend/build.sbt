@@ -27,7 +27,7 @@ libraryDependencies ++=
 // bug workaround
 updateOptions := updateOptions.value.withCachedResolution(false)
 
-mainClass in (Compile) := Some("com.martiansoftware.nailgun.NGServer")
+mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")
 
 enablePlugins(JavaAppPackaging)
 

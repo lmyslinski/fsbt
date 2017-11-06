@@ -1,9 +1,4 @@
-name := "fsbt"
-
-version := "0.0.1"
-
 maintainer := "Humblehound <lukmyslinski@gmail.com>"
-
 packageSummary := "fsbt Debian Package"
 
 libraryDependencies ++=
@@ -24,11 +19,7 @@ libraryDependencies ++=
       "com.martiansoftware" % "nailgun-server" % "0.9.1"
   )
 
-// bug workaround
-updateOptions := updateOptions.value.withCachedResolution(false)
-
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")
 
 enablePlugins(JavaAppPackaging)
-
 enablePlugins(DebianPlugin)

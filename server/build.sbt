@@ -1,5 +1,5 @@
-maintainer := "Humblehound <lukmyslinski@gmail.com>"
-packageSummary := "fsbt Debian Package"
+//maintainer := "Humblehound <lukmyslinski@gmail.com>"
+//packageSummary := "fsbt Debian Package"
 
 libraryDependencies ++=
   Seq(
@@ -21,5 +21,5 @@ libraryDependencies ++=
 
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")
 
-enablePlugins(JavaAppPackaging)
-enablePlugins(DebianPlugin)
+//enablePlugins(JavaAppPackaging)
+//enablePlugins(DebianPlugin)

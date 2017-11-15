@@ -1,0 +1,6 @@
+#!/bin/bash
+if [[ -z "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')" ]]; then
+    echo "Fsbt is not running, starting the daemon"
+else
+	echo "Running"
+  fi

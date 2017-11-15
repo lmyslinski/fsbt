@@ -5,7 +5,7 @@ import java.util.function.Supplier
 
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
-import com.typesafe.scalalogging.Logger
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import compiler.ZincCompiler
 import context.ContextUtil
 import core.config._
@@ -14,9 +14,10 @@ import org.slf4j.LoggerFactory
 
 import scala.sys.process._
 
-object Fsbt {
+object Fsbt extends LazyLogging{
 
-  val logger = Logger(LoggerFactory.getLogger(this.getClass))
+//  val logger = Logger(LoggerFactory.getLogger(this.getClass))
+
 
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
@@ -37,9 +38,11 @@ object Fsbt {
   }
 
   def main(args: Array[String]): Unit ={
+    println("Running normal main class")
     val config = ConfigBuilder.build("testProject")
     val args = List()
     compile(args, config)
+
   }
 
   def run(args: List[String], config: FsbtConfig): Unit = {
@@ -84,9 +87,11 @@ object Fsbt {
   }
 
   def nailMain(context: NGContext): Unit = {
-
+    println("Running nail main class")
+    println(context)
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
+    logger.debug(context.toString)
 
     if (args.isEmpty) {
       println("Printing info")

@@ -1,8 +1,9 @@
-#!/usr/bin/env bash -x
+#!/usr/bin/env
 
 port=1234
-
 app_commands=$port
+
+debug=true
 
 execRunner () {
   # print the arguments one to a line, quoting any containing spaces
@@ -17,8 +18,7 @@ execRunner () {
     echo ""
   }
 
-  # we use "exec" here for our pids to be accurate.
-  nohup "$@" &
+  nohup "$@" > ~/.fsbt/log 2> ~/.fsbt/error.log &
 }
 
 # Actually runs the script.
@@ -53,28 +53,18 @@ run() {
     java_opts="${JAVA_OPTS}"
   fi
 
-  #custom code
-
-  arg="$mainclass $port"
-  echo $arg
-
-
-  val="ps aux | pgrep -f '$arg'"
-
-  echo $val
-
-  if [[ -z $val ]]; then
-    echo "Fsbt is not running, starting the daemon"
+  if [[ -z "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')" ]]; then
     execRunner "$java_cmd" \
     ${java_opts[@]} \
     "${java_args[@]}" \
     -cp "$(fix_classpath "$app_classpath")" \
     "${mainclass[@]}" \
     "${app_commands[@]}" \
-    "${residual_args[@]}"
+
+    echo "Started fsbt daemon at port 1234"
+    ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
   else
-    echo "running"
-    ng-nailgun --nailgun-port $port core.Fsbt "$@"
+    ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
   fi
 
 }

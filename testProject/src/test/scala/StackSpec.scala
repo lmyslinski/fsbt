@@ -4,6 +4,7 @@ package scala.scalatesting
   * Created by humblehound on 22.07.17.
   */
 import scala.collection.mutable.Stack
+import org.scalatest._
 
 class StackSpec extends FlatSpec {
 

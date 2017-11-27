@@ -5,47 +5,35 @@ import java.util.function.Supplier
 
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
-import com.typesafe.scalalogging.{LazyLogging, Logger}
+import com.typesafe.scalalogging.LazyLogging
 import compiler.ZincCompiler
 import context.ContextUtil
 import core.config._
 import core.dependencies.DependencyDownloader
-import org.slf4j.LoggerFactory
 
 import scala.sys.process._
 
 object Fsbt extends LazyLogging{
 
-//  val logger = Logger(LoggerFactory.getLogger(this.getClass))
-
+  val cp = new ZincCompiler()
 
   def compile(args: List[String], config: FsbtConfig): Unit = {
 
     DependencyDownloader.resolveAll(config.dependencies)
-
-    val sourceFiles = config.getScalaSourceFiles
-
-    val classPath = config.dependencies.map(_.jarFile)
-
-    logger.debug("Compiling scala...")
-
     config.target.createIfNotExists(asDirectory = true)
-
-    val cp = new ZincCompiler()
-
-    val cr = cp.compile(classPath, sourceFiles, config.target)
-    logger.debug(cr.toString)
+    logger.debug("Compiling...")
+    val cr = cp.compile(config)
+    FsbtConfig.crCache = Some(cr)
   }
 
   def main(args: Array[String]): Unit ={
-    println("Running normal main class")
     val config = ConfigBuilder.build("testProject")
     val args = List()
     compile(args, config)
-
   }
 
   def run(args: List[String], config: FsbtConfig): Unit = {
+    logger.debug("Running main class")
     val ctx = ContextUtil.identifyContext(config.getTargetClasses)
     println(ctx)
     if (ctx.isEmpty) {
@@ -70,14 +58,9 @@ object Fsbt extends LazyLogging{
   }
 
   def test(config: FsbtConfig): Unit = {
-    val ctx = ContextUtil.identifyContext(config.getTargetClasses)
-
-//    val junit = List("java",  "-cp", config.getTestClassPath) ++ List("org.junit.runner.JUnitCore")
-//    val scalaTest = List("java",  "-cp", config.getTestClassPath) ++ List("org.scalatest.tools.Runner", "-R", s"${config.target}", "-o")
-
-//    println(command)
-
-//    val output = command.!
+    val scalaTest = List("java",  "-cp", config.getClasspath) ++ List("org.scalatest.tools.Runner", "-R", s"${config.target}", "-o")
+    println(scalaTest)
+    val output = scalaTest.!
   }
 
   def clean(config: FsbtConfig): Unit = {
@@ -88,26 +71,25 @@ object Fsbt extends LazyLogging{
 
   def nailMain(context: NGContext): Unit = {
     println("Running nail main class")
-    println(context)
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
-    logger.debug(context.toString)
 
     if (args.isEmpty) {
-      println("Printing info")
+      logger.debug("Printing info")
     } else
     args.foreach {
-      case "compile" => {
+      case "stop" =>
+        logger.debug("Exiting")
+        context.getNGServer.shutdown(true)
+      case "compile" =>
         try{
           compile(args, config)
         }catch {
           case ex: Exception => logger.debug("Oops")
         }
-      }
-      case "test" => {
+      case "test" =>
         compile(args, config)
         test(config)
-      }
       case "run" =>
         compile(args, config)
         run(args, config)

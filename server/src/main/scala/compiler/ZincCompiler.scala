@@ -8,6 +8,7 @@ import java.util.function.{Supplier, Function => JFunction}
 
 import better.files
 import com.typesafe.scalalogging.Logger
+import core.Fsbt.logger
 import core.config.FsbtConfig
 import org.slf4j.LoggerFactory
 import xsbti.compile.IncOptions
@@ -28,26 +29,29 @@ class ZincCompiler {
   private val zincLogger = new xsbti.Logger {
 
     override def debug(msg: Supplier[String]): Unit = {
-//      logger.debug(msg.get())
+      //      logger.debug(msg.get())
     }
 
     override def error(msg: Supplier[String]): Unit = logger.error(msg.get())
 
     override def warn(msg: Supplier[String]): Unit = {
-//      logger.warn(msg.get())
+      //      logger.warn(msg.get())
     }
 
     override def trace(exception: Supplier[Throwable]): Unit = {
-//      logger.trace("trace message", exception.get())
+      //      logger.trace("trace message", exception.get())
     }
 
     override def info(msg: Supplier[String]): Unit = logger.info(msg.get())
   }
 
 
-  def compile(classPath: List[files.File], sourceFiles: List[files.File], target: files.File) = {
-    val cp = ZincCompilerUtil.defaultIncrementalCompiler()
+  def compile(config: FsbtConfig): CompileResult = {
 
+
+    val sourceFiles = config.getScalaSourceFiles
+    val classPath = config.dependencies.map(_.jarFile)
+    val cp = ZincCompilerUtil.defaultIncrementalCompiler()
     val compilers = Compilers.create(compiler, javaTools)
 
     val setup = Setup.create(
@@ -60,17 +64,21 @@ class ZincCompiler {
       Optional.empty(),
       Array.empty)
 
-    val previousResult = PreviousResult.create(Optional.empty(), Optional.empty())
+    val previousResult = if (FsbtConfig.crCache.isDefined) {
+      PreviousResult.create(Optional.of(FsbtConfig.crCache.get.analysis()), Optional.of(FsbtConfig.crCache.get.setup()))
+    } else {
+      PreviousResult.create(Optional.empty(), Optional.empty())
+    }
 
     val inputs = Inputs.create(
       compilers,
       CompileOptions.create().
         withClasspath(classPath.map(_.toJava).toArray)
-        .withClassesDirectory(target.toJava)
+        .withClassesDirectory(config.target.toJava)
         .withSources(sourceFiles.map(_.toJava).toArray),
       setup,
       previousResult)
-    val cr = cp.compile(inputs, zincLogger)
+    cp.compile(inputs, zincLogger)
   }
 
   def getSourcePositionMapper = new Function[Position, Position]() {
@@ -109,10 +117,8 @@ class ZincCompiler {
       )
     )
 
-  val compilerJar = getJar("compiler-bridge")
-
   def getBridge = {
-    val qq = ZincUtil.constantBridgeProvider(scalaInstance, compilerJar)
+    val qq = ZincUtil.constantBridgeProvider(scalaInstance, getJar("compiler-bridge"))
     qq.fetchCompiledBridge(scalaInstance, zincLogger)
   }
 
@@ -143,9 +149,15 @@ class ZincCompiler {
   def propertiesFromResource(resource: String, classLoader: ClassLoader): java.util.Properties = {
     val props = new java.util.Properties
     val stream = classLoader.getResourceAsStream(resource)
-    try { props.load(stream) }
-    catch { case e: Exception => }
-    finally { if (stream ne null) stream.close }
+    try {
+      props.load(stream)
+    }
+    catch {
+      case e: Exception =>
+    }
+    finally {
+      if (stream ne null) stream.close
+    }
     props
   }
 
@@ -158,16 +170,17 @@ class ZincCompiler {
   }
 
   def urls: Array[URL] = getClasspathUrls(getClass.getClassLoader)
+
   val scalaHome = sys.env("SCALA_HOME")
 
   def getJar(name: String): File = {
     val classPathOption = urls.filter(_.toString.contains(name))
-    if(classPathOption.length == 1){
+    if (classPathOption.length == 1) {
       new File(classPathOption(0).getFile)
-    }else{
-      if(scalaHome != ""){
+    } else {
+      if (scalaHome != "") {
         new File(s"$scalaHome/lib/$name.jar")
-      }else{
+      } else {
         throw new RuntimeException(s"Cannot locate $name jar")
       }
     }

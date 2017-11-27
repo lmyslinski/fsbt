@@ -2,6 +2,7 @@ package core.config
 
 import better.files.File
 import core.dependencies.{DependencyResolver, MavenDependency}
+import xsbti.compile.CompileResult
 
 import scala.util.matching.Regex
 
@@ -25,24 +26,18 @@ class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, worki
     these.filter(f => r.findFirstIn(f.name).isDefined).toList
   }
 
-  val scalaSourceDir = workingDir + s"${dirSeparator}src${dirSeparator}main${dirSeparator}scala"
-  val javaSourceDir = workingDir + s"${dirSeparator}src${dirSeparator}main${dirSeparator}java"
-  val scalaTestSourceDir = workingDir + s"${dirSeparator}src${dirSeparator}test${dirSeparator}scala"
-  val javaTestSourceDir = workingDir + s"${dirSeparator}src${dirSeparator}test${dirSeparator}java"
-
   def getScalaSourceFiles: List[File] = recursiveListFiles(workingDir, scalaRegex)
   def getJavaSourceFiles: List[File] = recursiveListFiles(workingDir, javaRegex)
 
-
   def getClasspath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + pathSeparator + res) + "."
-  def getTestClassPath = dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + pathSeparator + res) + s"$target$dirSeparator"
-
 
   def getTargetClasses = recursiveListFiles(target.toString(), classRegex)
   def getTestClasses = recursiveListFiles(s"$target", classRegex)
   def getAllTargetClasses = recursiveListFiles(s"$target", new Regex(".*\\.class"))
 
   val dependencies: List[MavenDependency] = new DependencyResolver(rawDependencies).resolveAll()
+
+
 
 }
 
@@ -51,6 +46,7 @@ object FsbtConfig {
   val fsbtCache = s"$fsbtPath/cache"
   val zincCache = s"$fsbtPath/cache/compileCache"
   val scalaVersion = "_2.12"
+  var crCache: Option[CompileResult] = None
 }
 
 

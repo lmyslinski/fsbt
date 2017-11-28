@@ -9,6 +9,7 @@ import java.util.function.{Supplier, Function => JFunction}
 import better.files
 import com.typesafe.scalalogging.Logger
 import core.Fsbt.logger
+import core.cache.FsbtCache
 import core.config.FsbtConfig
 import org.slf4j.LoggerFactory
 import xsbti.compile.IncOptions
@@ -64,11 +65,7 @@ class ZincCompiler {
       Optional.empty(),
       Array.empty)
 
-    val previousResult = if (FsbtConfig.crCache.isDefined) {
-      PreviousResult.create(Optional.of(FsbtConfig.crCache.get.analysis()), Optional.of(FsbtConfig.crCache.get.setup()))
-    } else {
-      PreviousResult.create(Optional.empty(), Optional.empty())
-    }
+    val previousResult = FsbtCache.getCompileResult(config)
 
     val inputs = Inputs.create(
       compilers,
@@ -78,7 +75,9 @@ class ZincCompiler {
         .withSources(sourceFiles.map(_.toJava).toArray),
       setup,
       previousResult)
-    cp.compile(inputs, zincLogger)
+    val cr = cp.compile(inputs, zincLogger)
+    FsbtCache.updateCache(config, cr)
+    cr
   }
 
   def getSourcePositionMapper = new Function[Position, Position]() {

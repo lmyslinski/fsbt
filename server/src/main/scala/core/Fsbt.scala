@@ -8,6 +8,7 @@ import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import compiler.ZincCompiler
 import context.ContextUtil
+import core.cache.FsbtCache
 import core.config._
 import core.dependencies.DependencyDownloader
 
@@ -23,13 +24,10 @@ object Fsbt extends LazyLogging{
     config.target.createIfNotExists(asDirectory = true)
     logger.debug("Compiling...")
     val cr = cp.compile(config)
-    FsbtConfig.crCache = Some(cr)
   }
 
   def main(args: Array[String]): Unit ={
-    val config = ConfigBuilder.build("testProject")
-    val args = List()
-    compile(args, config)
+    println("Not running as nailgun!")
   }
 
   def run(args: List[String], config: FsbtConfig): Unit = {
@@ -70,7 +68,7 @@ object Fsbt extends LazyLogging{
   }
 
   def nailMain(context: NGContext): Unit = {
-    println("Running nail main class")
+    FsbtCache.loadCache()
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
 
@@ -79,14 +77,13 @@ object Fsbt extends LazyLogging{
     } else
     args.foreach {
       case "stop" =>
-        logger.debug("Exiting")
         context.getNGServer.shutdown(true)
       case "compile" =>
-        try{
+//        try{
           compile(args, config)
-        }catch {
-          case ex: Exception => logger.debug("Oops")
-        }
+//        }catch {
+//          case ex: Exception => logger.debug("Oops")
+//        }
       case "test" =>
         compile(args, config)
         test(config)

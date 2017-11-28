@@ -46,7 +46,6 @@ object FsbtConfig {
   val fsbtCache = s"$fsbtPath/cache"
   val zincCache = s"$fsbtPath/cache/compileCache"
   val scalaVersion = "_2.12"
-  var crCache: Option[CompileResult] = None
 }
 
 

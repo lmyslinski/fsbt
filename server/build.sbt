@@ -16,7 +16,9 @@ libraryDependencies ++=
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0",
     "com.google.guava" % "guava" % "23.0",
     "com.google.code.findbugs" % "jsr305" % "3.0.2",
-      "com.martiansoftware" % "nailgun-server" % "0.9.1"
+    "com.martiansoftware" % "nailgun-server" % "0.9.1",
+    "com.twitter" %% "chill" % "0.9.2"
+
   )
 
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")

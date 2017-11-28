@@ -3,7 +3,7 @@
 port=1234
 app_commands=$port
 
-debug=true
+#debug=true
 
 execRunner () {
   # print the arguments one to a line, quoting any containing spaces
@@ -53,7 +53,9 @@ run() {
     java_opts="${JAVA_OPTS}"
   fi
 
-  if [[ -z "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')" ]]; then
+  if [ -z "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')" ]; then
+    echo "Starting fsbt server"
+    echo "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')"
     execRunner "$java_cmd" \
     ${java_opts[@]} \
     "${java_args[@]}" \
@@ -61,7 +63,6 @@ run() {
     "${mainclass[@]}" \
     "${app_commands[@]}" \
 
-    echo "Started fsbt daemon at port 1234"
     ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
   else
     ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"

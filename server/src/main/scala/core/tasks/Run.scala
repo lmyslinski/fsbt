@@ -19,20 +19,18 @@ object Run extends Task with LazyLogging {
 
   override def perform(config: FsbtConfig)(implicit ctx: NGContext): Unit = {
 
-    logger.debug("Running main class")
 
-    val ctx = ContextUtil.identifyContext(config.getTargetClasses)
+    val runCtx = ContextUtil.identifyContext(config.getTargetClasses)
     val cp = runtimeClassPath(config)
 
-    println(ctx)
-    if (ctx.isEmpty) {
-      println("No context were found")
+    if (runCtx.isEmpty) {
+      ctx.out.println("No context were found")
     } else {
-      val className = ctx.head.className.get
+      val className = runCtx.head.className.get
       val cls = transformClassFormat(className)
       val command = List("java",  "-cp", cp, cls)
       val output = command.lineStream
-      output.foreach(println)
+      output.foreach(ctx.out.println)
     }
   }
 

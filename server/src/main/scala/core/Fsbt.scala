@@ -6,11 +6,7 @@ import java.util.function.Supplier
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
-import compiler.ZincCompiler
-import context.ContextUtil
-import core.cache.FsbtCache
 import core.config._
-import core.dependencies.DependencyDownloader
 import core.tasks.{Compile, Run}
 
 import scala.sys.process._
@@ -51,11 +47,10 @@ object Fsbt extends LazyLogging{
   def nailMain(context: NGContext): Unit = {
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
-
-    implicit val ctx = context
+    implicit val ctx: NGContext = context
 
     if (args.isEmpty) {
-      logger.debug("Printing info")
+      context.out.println("fsbt@0.0.1")
     } else
     args.foreach {
       case "stop" =>

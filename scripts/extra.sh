@@ -18,8 +18,7 @@ execRunner () {
     echo ""
   }
 
-  nohup "$@" > ~/.fsbt/log 2> ~/.fsbt/error.log &
-  #echo $! > ~/.fsbt/fsbt.pid
+  nohup "$@" >> ~/.fsbt/log 2> ~/.fsbt/error.log &
 
 }
 
@@ -67,6 +66,7 @@ run() {
     "${app_commands[@]}" \
 
 
+
     counter=0
     isRunning=""
     while [[ -z $isRunning ]] && [ $counter -lt 100 ]
@@ -77,6 +77,7 @@ run() {
 
     if [ $isRunning -eq $! ];
     then
+    echo "fsbt server started at port 1234"
         ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
     else
         echo "Failed to start fsbt"

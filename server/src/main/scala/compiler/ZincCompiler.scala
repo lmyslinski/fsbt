@@ -41,20 +41,22 @@ class ZincCompiler {
   }
 
 
+  // TODO: consider caching mini setup between launches, so that we don't get a fresh compilation with each run
+  lazy val setup: Setup = Setup.create(
+    getPerClasspathEntryLookup,
+    false,
+    new File(FsbtConfig.zincCache),
+    CompilerCache.fresh,
+    IncOptions.create(),
+    reporter,
+    Optional.empty(),
+    Array.empty)
+
+  lazy val compilers: Compilers = Compilers.create(compiler, javaTools)
+
   def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtConfig): CompileResult = {
 
     val cp = ZincCompilerUtil.defaultIncrementalCompiler()
-    val compilers = Compilers.create(compiler, javaTools)
-
-    val setup = Setup.create(
-      getPerClasspathEntryLookup,
-      false,
-      new File(FsbtConfig.zincCache),
-      CompilerCache.fresh,
-      IncOptions.create(),
-      reporter,
-      Optional.empty(),
-      Array.empty)
 
     val previousResult = FsbtCache.getCompileResult(config)
 
@@ -113,20 +115,8 @@ class ZincCompiler {
     qq.fetchCompiledBridge(ScalaLocator.scalaInstance, zincLogger)
   }
 
-  /**
-    * Create a new classloader with the root loader as parent (to avoid zinc itself being included).
-    */
-
-
-
-
-
 
   def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(ScalaLocator.scalaInstance, getBridge)
-
-
-
-
 
   def javaTools = JavaTools(JavaCompiler.fork(), Javadoc.fork())
 }

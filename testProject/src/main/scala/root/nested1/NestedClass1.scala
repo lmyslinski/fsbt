@@ -5,6 +5,6 @@ package root.nested1
   */
 class NestedClass1 {
 
-  val nestedClass1variable = "Nested package class loaded"
+  val nestedClass1variable = "Nested package class loaded  YEAH"
 
 }

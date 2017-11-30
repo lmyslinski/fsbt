@@ -11,34 +11,15 @@ import context.ContextUtil
 import core.cache.FsbtCache
 import core.config._
 import core.dependencies.DependencyDownloader
+import core.tasks.{Compile, Run}
 
 import scala.sys.process._
 
 object Fsbt extends LazyLogging{
 
-  val cp = new ZincCompiler()
-
-  def compile(args: List[String], config: FsbtConfig): Unit = {
-
-    DependencyDownloader.resolveAll(config.dependencies)
-    config.target.createIfNotExists(asDirectory = true)
-    logger.debug("Compiling...")
-    val cr = cp.compile(config)
-  }
 
   def main(args: Array[String]): Unit ={
     println("Not running as nailgun!")
-  }
-
-  def run(args: List[String], config: FsbtConfig): Unit = {
-    logger.debug("Running main class")
-    val ctx = ContextUtil.identifyContext(config.getTargetClasses)
-    println(ctx)
-    if (ctx.isEmpty) {
-      println("No context were found")
-    } else {
-      ctx.head.run(config.target)
-    }
   }
 
   def createJar(args: List[String], config: FsbtConfig): Unit = {
@@ -68,9 +49,10 @@ object Fsbt extends LazyLogging{
   }
 
   def nailMain(context: NGContext): Unit = {
-    FsbtCache.loadCache()
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
+
+    implicit val ctx = context
 
     if (args.isEmpty) {
       logger.debug("Printing info")
@@ -79,22 +61,26 @@ object Fsbt extends LazyLogging{
       case "stop" =>
         context.getNGServer.shutdown(true)
       case "compile" =>
-//        try{
-          compile(args, config)
-//        }catch {
-//          case ex: Exception => logger.debug("Oops")
-//        }
+        Compile.perform(config)
       case "test" =>
-        compile(args, config)
+        Compile.perform(config)
         test(config)
       case "run" =>
-        compile(args, config)
-        run(args, config)
+        Compile.perform(config)
+        Run.perform(config)
       case "package" =>
-        compile(args, config)
+        Compile.perform(config)
         createJar(args, config)
       case "clean" => clean(config)
-      case unknown => println("command not found: " + unknown)
+      case unknown => context.out.println("command not found: " + unknown)
+    }
+  }
+
+  def executeTask(f: (List[String], FsbtConfig) => Unit, args: List[String], config: FsbtConfig): Unit ={
+    try{
+      f(args, config)
+    }catch{
+      case ex: Exception => logger.debug("Oops")
     }
   }
 

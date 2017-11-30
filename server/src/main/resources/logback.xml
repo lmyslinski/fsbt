@@ -5,6 +5,19 @@
         </encoder>
     </appender>
 
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${user.home}/.fsbt/log</file>
+        <append>true</append>
+        <!-- set immediateFlush to false for much higher logging throughput -->
+        <!--<immediateFlush>true</immediateFlush>-->
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
         <!--&lt;!&ndash; path to your log file, where you want to store logs &ndash;&gt;-->
         <!--<file>/Users/yourusername/test.log</file>-->
@@ -14,8 +27,8 @@
         <!--</encoder>-->
     <!--</appender>-->
 
-    <root level="debug">
-        <appender-ref ref="STDOUT" />
-        <!--<appender-ref ref="FILE" />-->
+    <root level="info">
+        <!--<appender-ref ref="STDOUT" />-->
+        <appender-ref ref="FILE" />
     </root>
 </configuration>

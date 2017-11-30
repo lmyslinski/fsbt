@@ -15,7 +15,7 @@ class ContextResolver {
   var className: Option[String] = None
   var superClass: Option[String] = None
 
-  def run(target: File): Unit = {
+  def run(target: File, classpath: String): Unit = {
     val cls = transformClassFormat(className.get)
     val command = List("java",  "-cp", target.toString(), cls)
     val output = command.lineStream

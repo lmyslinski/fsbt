@@ -21,6 +21,8 @@ class FsbtConfig(rawDependencies: List[MavenDependency], val target: File, worki
     case false => Environment.Unix
   }
 
+  def getPathSeparator() = pathSeparator
+
   def recursiveListFiles(path: String, r: Regex): List[File] = {
     val these = File(path).listRecursively
     these.filter(f => r.findFirstIn(f.name).isDefined).toList

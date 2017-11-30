@@ -20,5 +20,5 @@ import root.nested1.NestedClass1
 
         println("Main class loaded")
         println(nestedClass1.nestedClass1variable)
-        println("We're good")
+        println("We're all good")
     }

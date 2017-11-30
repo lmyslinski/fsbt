@@ -19,6 +19,8 @@ execRunner () {
   }
 
   nohup "$@" > ~/.fsbt/log 2> ~/.fsbt/error.log &
+  #echo $! > ~/.fsbt/fsbt.pid
+
 }
 
 # Actually runs the script.
@@ -53,9 +55,10 @@ run() {
     java_opts="${JAVA_OPTS}"
   fi
 
-  if [ -z "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')" ]; then
-    echo "Starting fsbt server"
-    echo "$(ps aux | pgrep -f 'com.martiansoftware.nailgun.NGServer 1234')"
+
+
+
+  if [[ -z "$(ps aux | grep -e '[c]om.martiansoftware.nailgun.NGServer 1234')" ]]; then
     execRunner "$java_cmd" \
     ${java_opts[@]} \
     "${java_args[@]}" \
@@ -63,7 +66,21 @@ run() {
     "${mainclass[@]}" \
     "${app_commands[@]}" \
 
-    ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
+
+    counter=0
+    isRunning=""
+    while [[ -z $isRunning ]] && [ $counter -lt 100 ]
+    do
+        isRunning="$(lsof -Pi :1234 -sTCP:LISTEN -t)"
+        ((counter++))
+    done
+
+    if [ $isRunning -eq $! ];
+    then
+        ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
+    else
+        echo "Failed to start fsbt"
+    fi
   else
     ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
   fi

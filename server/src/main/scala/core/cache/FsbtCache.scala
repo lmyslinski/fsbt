@@ -4,21 +4,20 @@ import java.io._
 import java.util.Optional
 
 import better.files.File
+import com.twitter.chill.{Externalizer, Input, Output, ScalaKryoInstantiator}
 import com.typesafe.scalalogging.Logger
 import core.config.FsbtConfig
 import core.config.FsbtConfig.fsbtPath
 import org.slf4j.LoggerFactory
-import com.twitter.chill.{Externalizer, Input, MeatLocker, Output, ScalaKryoInstantiator}
-import com.twitter.chill
 import xsbti.compile.{CompileResult, PreviousResult}
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.HashMap
 
 object FsbtCache{
 
   private val zincCache = s"$fsbtPath/cache/compileCache"
 
-  private val localCache : TrieMap[String, CompileResult] = TrieMap()
+  private var localCache : HashMap[String, CompileResult] = new HashMap()
 
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
@@ -32,15 +31,27 @@ object FsbtCache{
 
   def loadCache(): Unit = {
     if(File(zincCache).exists){
-      cacheSerializer.read(kryo, new Input(new FileInputStream(zincCache)))
-      val cache = cacheSerializer.get
-      localCache ++= cache
+      logger.debug("Loading cache...")
+      try{
+        val fis = new FileInputStream(zincCache)
+        cacheSerializer.read(kryo, new Input(fis))
+        fis.close()
+        val cache = cacheSerializer.get
+        localCache ++= cache
+      }catch{
+        case ex: Exception => logger.error("WTF", ex)
+      }
+
     }
+    logger.debug(s"Cache: $localCache")
   }
 
   def updateCache(config: FsbtConfig, cr: CompileResult): Unit = {
-    localCache.put(config.projectName, cr)
-    cacheSerializer.write(kryo, new Output(new FileOutputStream(zincCache)))
+    localCache = localCache.updated(config.projectName, cr)
+    val fstream = new FileOutputStream(zincCache)
+    Externalizer(localCache).write(kryo, new Output(fstream))
+    fstream.close()
+    logger.debug("Updated cache...")
   }
 
   def getCompileResult(config: FsbtConfig): PreviousResult = {

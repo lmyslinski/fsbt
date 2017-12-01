@@ -1,0 +1,9 @@
+name := "fsbt-test-project"
+
+version := "0.0.1"
+
+libraryDependencies ++= Seq(
+    "junit" % "junit" % "4.12",
+    "org.scalatest" %% "scalatest" % "3.0.1"
+)
+

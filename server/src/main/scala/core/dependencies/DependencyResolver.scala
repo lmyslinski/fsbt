@@ -11,16 +11,13 @@ import org.slf4j.LoggerFactory
 import scala.collection.immutable.Seq
 import scala.xml.{Elem, NodeSeq, XML}
 
-/**
-  * Created by humblehound on 21.07.17.
-  */
 class DependencyResolver(dependencies: List[MavenDependency]) {
 
   private val pomVariableRegex = """\$\{(.*)\}""".r
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
   def resolveAll(): List[MavenDependency] = {
-    val a = (dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies)
+    val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
     val c = b.map{
       case ((group, artifact), deps) =>

@@ -1,8 +1,5 @@
 package secondpackage;
 
-/**
- * Created by humblehound on 7/7/17.
- */
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 

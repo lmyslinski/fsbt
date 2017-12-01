@@ -4,9 +4,6 @@ import better.files.File
 
 import scala.tools.asm.ClassReader
 
-/**
-  * Created by humblehound on 19.06.17.
-  */
 object ContextUtil {
 
   def identifyContext(targetClasses: List[File]): List[ContextResolver] = {

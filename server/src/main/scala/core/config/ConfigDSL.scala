@@ -1,9 +1,5 @@
 package core.config
 
-/**
-  * Created by lukmy on 19.03.2017.
-  */
-
 import java.io.FileReader
 
 import core.dependencies.MavenDependency
@@ -11,13 +7,11 @@ import core.dependencies.MavenDependency
 import scala.util.Try
 import scala.util.parsing.combinator._
 
-//unmanagedJars in Compile += file("lib/nailgun-server-0.9.2-SNAPSHOT.jar")
-
 class ConfigDSL extends JavaTokenParsers {
 
   def configuration = rep(expression)
 
-  def expression = assignment | singleDep | multiDep | unmanagedJar
+  def expression = assignment | singleDep | multiDep | unmanagedJar | module
 
   def assignment = ident ~ ":=" ~ stringLiteral ^^ { case (a ~ b ~ c) => MapEntry(a, c) }
 
@@ -35,6 +29,8 @@ class ConfigDSL extends JavaTokenParsers {
 
   def jarScope = "Compile" | "Runtime" | "Test"
 
+  def module = "submodules" ~ ":=" ~ "(" ~ repsep(stringLiteral, ",") ~ ")" ^^ {case (a ~ b ~ c ~ d ~ e) => MapEntry(a, Modules(d))}
+
   implicit def toPureString(value: String): PureString = PureString(value.substring(1, value.length() - 1))
 }
 
@@ -42,12 +38,10 @@ object ConfigDSL extends ConfigDSL {
 
   def parseConfigFile(uri: String): Try[Map[ConfigEntry.Value, ConfigValue]] = Try {
     parseAll(configuration, new FileReader(uri)) match {
-      case Success(res, _) => {
+      case Success(res, _) =>
         res.map(f => (ConfigEntry.withName(f.key), f.value)).toMap
-      }
-      case Failure(res, ab) => {
+      case Failure(res, ab) =>
         throw new ConfigFileException(res.toString)
-      }
     }
   }
 }
@@ -65,5 +59,7 @@ case class Dependency(group: String, artifact: String, version: String, withScal
 case class DependencyList(dependencies: List[Dependency]) extends ConfigValue
 
 case class UnmanagedJar(path: String, scope: String) extends ConfigValue
+
+case class Modules(moduleList: List[String]) extends ConfigValue
 
 case class MapEntry(key: String, value: ConfigValue)

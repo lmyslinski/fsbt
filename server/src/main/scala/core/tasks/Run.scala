@@ -4,23 +4,28 @@ import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import compiler.ScalaLocator
 import context.ContextUtil
-import core.config.FsbtConfig
+import core.FsbtUtil
+import core.config.{Environment, FsbtConfig}
 import core.dependencies.MavenDependencyScope
 
 import scala.sys.process._
+import scala.util.matching.Regex
 
 object Run extends Task with LazyLogging {
 
   private def runtimeClassPath(config: FsbtConfig) = {
     val scalaJarPaths = ScalaLocator.scalaInstance.allJars.map(_.toPath.toAbsolutePath.toString)
     val runtimeDepsPaths = config.dependencies.filter(_.scope == MavenDependencyScope.Runtime).map(_.jarFile.path.toAbsolutePath.toString)
-    (scalaJarPaths ++ runtimeDepsPaths ++ Array(config.target.path.toAbsolutePath.toString)).foldLeft("")((dep, res) => dep + config.getPathSeparator() + res)
+    (scalaJarPaths ++ runtimeDepsPaths ++ Array(config.target.path.toAbsolutePath.toString)).foldLeft("")((dep, res) => dep + Environment.dirSeparator(config.environment) + res)
   }
+
+  // parse only top-level class files, omit nested classes
+  val classRegex = new Regex("^[^$]+.class$")
 
   override def perform(config: FsbtConfig)(implicit ctx: NGContext): Unit = {
 
 
-    val runCtx = ContextUtil.identifyContext(config.getTargetClasses)
+    val runCtx = ContextUtil.identifyContext(FsbtUtil.recursiveListFiles(config.target.toString(), classRegex))
     val cp = runtimeClassPath(config)
 
     if (runCtx.isEmpty) {

@@ -19,9 +19,6 @@ import sbt.io.Path
 import xsbti._
 import xsbti.compile._
 
-/**
-  * Created by humblehound on 24.07.17.
-  */
 class ZincCompiler {
 
 
@@ -67,19 +64,19 @@ class ZincCompiler {
       setup,
       previousResult)
     val cr = cp.compile(inputs, zincLogger)
-    if(cr.hasModified){
+    if (cr.hasModified) {
       FsbtCache.updateCache(config, cr)
     }
 
     cr
   }
 
-  def getSourcePositionMapper = new Function[Position, Position]() {
+  private def getSourcePositionMapper = new Function[Position, Position]() {
     override def apply(a: Position): Position = a
   }
 
 
-  def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
+  private def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
 
     override def definesClass(classpathEntry: File): DefinesClass = new DefinesClass {
       override def apply(className: String): Boolean = {
@@ -91,13 +88,13 @@ class ZincCompiler {
     override def analysis(classpathEntry: File): Optional[CompileAnalysis] = Optional.empty()
   }
 
-  val positionMapper =
+  private val positionMapper =
     new JFunction[Position, Position] {
       override def apply(p: Position): Position = p
     }
 
 
-  val reporter =
+  private val reporter =
     ReporterUtil.getDefault(
       ReporterConfig.create(
         "",
@@ -110,7 +107,7 @@ class ZincCompiler {
       )
     )
 
-  def getBridge = {
+  private def getBridge = {
     val qq = ZincUtil.constantBridgeProvider(ScalaLocator.scalaInstance, ScalaLocator.getJar("compiler-bridge"))
     qq.fetchCompiledBridge(ScalaLocator.scalaInstance, zincLogger)
   }

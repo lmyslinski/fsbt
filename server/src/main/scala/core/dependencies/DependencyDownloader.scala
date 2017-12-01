@@ -8,9 +8,6 @@ import better.files.File
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
-/**
-  * Created by humblehound on 22.07.17.
-  */
 object DependencyDownloader {
 
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))

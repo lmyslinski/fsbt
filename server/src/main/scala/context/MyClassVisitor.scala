@@ -2,9 +2,6 @@ package context
 
 import scala.tools.asm.{ClassVisitor, MethodVisitor, Opcodes}
 
-/**
-  * Created by humblehound on 19.06.17.
-  */
 class MyClassVisitor(contextResolver: ContextResolver) extends ClassVisitor(Opcodes.ASM4){
 
   override def visit(version: Int, access: Int, name: String, signature: String, superName: String, interfaces: Array[String]): Unit = {

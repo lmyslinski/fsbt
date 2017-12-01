@@ -1,9 +1,5 @@
 package core.config
 
-/**
-  * Created by Admin on 30.03.2017.
-  */
-
 object ConfigEntry extends Enumeration{
 	val name = Value("name")
 	val version = Value("version")
@@ -12,4 +8,5 @@ object ConfigEntry extends Enumeration{
 	val dependencyList = Value("libraryDependencies")
 	val unmanagedJar = Value("unmanagedJar")
 	val workingDir = Value("workDir")
+	val modules = Value("submodules")
 }

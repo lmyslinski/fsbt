@@ -4,41 +4,33 @@ import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import core.dependencies.MavenDependency
 
-object ConfigBuilder{
+object ConfigBuilder {
 
-  def build(context: NGContext) = {
-    val configFilePath = context.getWorkingDirectory + "/build.fsbt"
-    val config: Map[ConfigEntry.Value, Any] = (for{
-      configFileUri <- ConfigValidator.validateConfigFileExists(configFilePath)
-      configMap <- ConfigDSL.parseConfigFile(configFilePath)
-      configMap <- ConfigValidator.validateConfigFileKeySet(configMap)
-      configMap <- ConfigValidator.validateConfigFileValues(configMap)
-    } yield buildConfig(configMap, context.getWorkingDirectory)).get
+  def build(workDir: String): FsbtConfig = actualBuildConfig(workDir)
 
-    new FsbtConfig(
-      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
-      File(config(ConfigEntry.targetDirectory).toString),
-      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString,
-      System.getProperty("os.name")
-      )
-  }
+  def build(context: NGContext): FsbtConfig = actualBuildConfig(context.getWorkingDirectory)
 
-  def build(workDir: String) = {
+  private def actualBuildConfig(workDir: String) = {
     val configFilePath = workDir + "/build.fsbt"
-    val config: Map[ConfigEntry.Value, Any] = (for{
-      configFileUri <- ConfigValidator.validateConfigFileExists(configFilePath)
+    val config: Map[ConfigEntry.Value, Any] = (for {
+      _ <- ConfigValidator.validateConfigFileExists(configFilePath)
       configMap <- ConfigDSL.parseConfigFile(configFilePath)
-      configMap <- ConfigValidator.validateConfigFileKeySet(configMap)
-      configMap <- ConfigValidator.validateConfigFileValues(configMap)
     } yield buildConfig(configMap, workDir)).get
 
+    val environment: Environment.Value = System.getProperty("os.name").contains("Windows") match {
+      case true => Environment.Windows
+      case false => Environment.Unix
+    }
+
     new FsbtConfig(
       config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
       File(config(ConfigEntry.targetDirectory).toString),
       config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString,
-      System.getProperty("os.name"))
+      environment)
   }
 
+
+  // TODO make this actually make sense
   private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], workDir: String): Map[ConfigEntry.Value, Any] = {
 
     val defaultConfig = Map(
@@ -52,12 +44,12 @@ object ConfigBuilder{
 
     defaultConfig.map((keyValue) => {
       val key = keyValue._1
-      if(configMap.keySet.contains(key)){
+      if (configMap.keySet.contains(key)) {
         configMap(key) match {
           case PureString(value) => (key, value)
           case DependencyList(list) => (key, list)
         }
-      }else{
+      } else {
         keyValue
       }
     })

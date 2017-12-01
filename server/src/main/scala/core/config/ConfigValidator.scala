@@ -4,9 +4,6 @@ import java.nio.file.{Files, Paths}
 
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by Admin on 30.03.2017.
-  */
 object ConfigValidator {
 	def validateConfigFileKeySet(configMap: Map[ConfigEntry.Value, ConfigValue]) = {
     Success(configMap)

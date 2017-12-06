@@ -10,4 +10,6 @@ object FsbtUtil {
     val these = File(path).listRecursively
     these.filter(f => r.findFirstIn(f.name).isDefined).toList
   }
+
+  def stripQuotes(string: String): String = string.replaceAll("^\"|\"$", "")
 }

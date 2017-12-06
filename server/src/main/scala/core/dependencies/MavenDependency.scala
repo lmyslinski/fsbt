@@ -2,7 +2,7 @@ package core.dependencies
 
 import better.files.File
 import com.typesafe.scalalogging.Logger
-import core.config.{Dependency, FsbtConfig}
+import core.config.FsbtProject
 import org.slf4j.LoggerFactory
 
 // exclusions are not supported for now
@@ -16,20 +16,20 @@ class MavenDependency(
 
   override def toString: String = s"$descriptor"
 
-  def this(dependency: Dependency) = this(
-    MavenDependency.stripQuotes(dependency.group),
-    MavenDependency.stripQuotes(dependency.artifact),
-    MavenDependency.stripQuotes(dependency.version),
-    withScalaVersion = dependency.withScalaVersion
-  )
+//  def this(dependency: Dependency) = this(
+//    MavenDependency.stripQuotes(dependency.group),
+//    MavenDependency.stripQuotes(dependency.artifact),
+//    MavenDependency.stripQuotes(dependency.version),
+//    withScalaVersion = dependency.withScalaVersion
+//  )
 
   def copyWith(groupId: String = groupId, artifactId: String = artifactId, version: String = version): MavenDependency = {
     new MavenDependency(groupId, artifactId, version, optional, withScalaVersion, scope)
   }
 
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
-  val pomFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/pom.xml")
-  val jarFile = File(s"${FsbtConfig.fsbtCache}/$groupId/$artifactId/$version/$artifactId.jar")
+  val pomFile = File(s"${FsbtProject.fsbtCache}/$groupId/$artifactId/$version/pom.xml")
+  val jarFile = File(s"${FsbtProject.fsbtCache}/$groupId/$artifactId/$version/$artifactId.jar")
   val descriptor = s"$withScalaVersion $groupId/$artifactId/$version"
 
   val baseUri: String = {
@@ -39,7 +39,7 @@ class MavenDependency(
     val vrs = version
 
     if (withScalaVersion) {
-      s"${MavenDependency.mavenCentral}/$group/$artifact${FsbtConfig.scalaVersion}/$vrs/$artifact${FsbtConfig.scalaVersion}-$vrs"
+      s"${MavenDependency.mavenCentral}/$group/$artifact${FsbtProject.scalaVersion}/$vrs/$artifact${FsbtProject.scalaVersion}-$vrs"
     } else {
       s"${MavenDependency.mavenCentral}/$group/$artifact/$version/$artifact-$vrs"
     }

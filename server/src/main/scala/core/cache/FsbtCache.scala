@@ -6,8 +6,8 @@ import java.util.Optional
 import better.files.File
 import com.twitter.chill.{Externalizer, Input, Output, ScalaKryoInstantiator}
 import com.typesafe.scalalogging.Logger
-import core.config.FsbtConfig
-import core.config.FsbtConfig.fsbtPath
+import core.config.FsbtProject
+import core.config.FsbtProject.fsbtPath
 import org.slf4j.LoggerFactory
 import xsbti.compile.{CompileResult, PreviousResult}
 
@@ -46,7 +46,7 @@ object FsbtCache{
     logger.debug(s"Cache: $localCache")
   }
 
-  def updateCache(config: FsbtConfig, cr: CompileResult): Unit = {
+  def updateCache(config: FsbtProject, cr: CompileResult): Unit = {
     localCache = localCache.updated(config.projectName, cr)
     val fstream = new FileOutputStream(zincCache)
     Externalizer(localCache).write(kryo, new Output(fstream))
@@ -54,7 +54,7 @@ object FsbtCache{
     logger.debug("Updated cache...")
   }
 
-  def getCompileResult(config: FsbtConfig): PreviousResult = {
+  def getCompileResult(config: FsbtProject): PreviousResult = {
     if(localCache.contains(config.projectName)){
       val cache = localCache(config.projectName)
       PreviousResult.create(Optional.of(cache.analysis()), Optional.of(cache.setup()))

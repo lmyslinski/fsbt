@@ -10,7 +10,7 @@ import better.files
 import com.typesafe.scalalogging.Logger
 import core.Fsbt.logger
 import core.cache.FsbtCache
-import core.config.FsbtConfig
+import core.config.FsbtProject
 import org.slf4j.LoggerFactory
 import xsbti.compile.IncOptions
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
@@ -42,7 +42,7 @@ class ZincCompiler {
   lazy val setup: Setup = Setup.create(
     getPerClasspathEntryLookup,
     false,
-    new File(FsbtConfig.zincCache),
+    new File(FsbtProject.zincCache),
     CompilerCache.fresh,
     IncOptions.create(),
     reporter,
@@ -51,7 +51,7 @@ class ZincCompiler {
 
   lazy val compilers: Compilers = Compilers.create(compiler, javaTools)
 
-  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtConfig): CompileResult = {
+  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject): CompileResult = {
 
     val cp = ZincCompilerUtil.defaultIncrementalCompiler()
 

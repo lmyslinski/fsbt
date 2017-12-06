@@ -6,13 +6,13 @@ import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.FsbtUtil
-import core.config.FsbtConfig
+import core.config.FsbtProject
 
 import scala.sys.process.Process
 import scala.util.matching.Regex
 
 object JarPackage extends Task with LazyLogging{
-  override def perform(config: FsbtConfig)(implicit ctx: NGContext): Unit = {
+  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
     mf.parent.createIfNotExists(asDirectory = true, createParents = true)
     val manifestFile = mf.toJava

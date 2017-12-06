@@ -12,7 +12,6 @@ object Fsbt extends LazyLogging {
     println("Not running as nailgun!")
   }
 
-
   def nailMain(context: NGContext): Unit = {
     val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
@@ -40,13 +39,4 @@ object Fsbt extends LazyLogging {
         case unknown => context.out.println("command not found: " + unknown)
       }
   }
-
-//  def executeTask(f: (List[String], FsbtConfig) => Unit, args: List[String], config: FsbtConfig): Unit = {
-//    try {
-//      f(args, config)
-//    } catch {
-//      case ex: Exception => logger.debug("Oops")
-//    }
-//  }
-
 }

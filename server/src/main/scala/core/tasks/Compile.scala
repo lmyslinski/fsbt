@@ -5,8 +5,8 @@ import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import compiler.ZincCompiler
 import core.cache.FsbtCache
-import core.config.FsbtConfig
-import core.dependencies.{DependencyDownloader, DependencyResolver}
+import core.config.FsbtProject
+import core.dependencies.{DependencyDownloader, DependencyResolver, MavenDependency}
 import core.FsbtUtil
 
 import scala.util.matching.Regex
@@ -14,7 +14,7 @@ import scala.util.matching.Regex
 class Compile extends Task with LazyLogging {
 
 
-  override def perform(config: FsbtConfig)(implicit ctx: NGContext): Unit = {
+  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
 
     new DependencyResolver(config.dependencies).resolveAll()
     DependencyDownloader.resolveAll(config.dependencies)
@@ -31,9 +31,10 @@ class Compile extends Task with LazyLogging {
   }
 
   def getSourceFiles(workingDir: String) = {
-    def getScalaSourceFiles: List[File] = FsbtUtil.recursiveListFiles(workingDir, scalaRegex)
-    def getJavaSourceFiles: List[File] = FsbtUtil.recursiveListFiles(workingDir, javaRegex)
-    getJavaSourceFiles ++ getJavaSourceFiles
+    def getScalaSourceFiles: List[File] = FsbtUtil.recursiveListFiles(workingDir, Compile.scalaRegex)
+    def getJavaSourceFiles: List[File] = FsbtUtil.recursiveListFiles(workingDir, Compile.javaRegex)
+    getScalaSourceFiles
+    //++ getJavaSourceFiles
   }
 
 }

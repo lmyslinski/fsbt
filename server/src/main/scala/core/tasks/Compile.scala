@@ -16,7 +16,6 @@ class Compile extends Task with LazyLogging {
 
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
 
-    new DependencyResolver(config.dependencies).resolveAll()
     DependencyDownloader.resolveAll(config.dependencies)
 
     config.target.createIfNotExists(asDirectory = true)

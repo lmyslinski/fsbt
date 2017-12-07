@@ -1,8 +1,5 @@
-name := "fsbt-test-submodule-1"
+name = "fsbt-test-submodule-1"
 
-version := "0.0.1"
-
-libraryDependencies ++= Seq(
-    "com.google.guava" % "guava" % "23.5"
-)
-
+dependencies = {
+    "com.google.guava" % "guava" % "23.0"
+}

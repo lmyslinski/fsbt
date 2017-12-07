@@ -11,7 +11,7 @@ case class FsbtProject(
                        projectName: String,
                        environment: Environment.Value,
                        variables: Variables,
-                       modules: List[FsbtModule])
+                       modules: List[FsbtProject])
 
 object FsbtProject {
 

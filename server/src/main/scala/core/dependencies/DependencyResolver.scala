@@ -11,12 +11,20 @@ import org.slf4j.LoggerFactory
 import scala.collection.immutable.Seq
 import scala.xml.{Elem, NodeSeq, XML}
 
-class DependencyResolver(dependencies: List[MavenDependency]) {
+// first, download pom and jar for each dependency
+// create a list of all first and second level deps
+// choose a strategy for resolving version conflicts (default: higher wins)
+// download all not-yet resolved jars
+// persist an immutable classpath somehow
+
+// also, add checksum verification...
+// also, add parent pom support (FML)
+object DependencyResolver {
 
   private val pomVariableRegex = """\$\{(.*)\}""".r
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
-  def resolveAll(): List[MavenDependency] = {
+  def resolveAll(dependencies: List[MavenDependency]): List[MavenDependency] = {
     val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
     val c = b.map{
@@ -176,15 +184,4 @@ class DependencyResolver(dependencies: List[MavenDependency]) {
 
     new MavenDependency(groupId, artifactId, version, scope = scope, optional = optional)
   }
-
-
-  // first, download pom and jar for each dependency
-  // create a list of all first and second level deps
-  // choose a strategy for resolving version conflicts (default: higher wins)
-  // download all not-yet resolved jars
-  // persist an immutable classpath somehow
-
-  // also, add checksum verification...
-  // also, add parent pom support (FML)
-
 }

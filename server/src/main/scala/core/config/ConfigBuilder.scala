@@ -1,30 +1,37 @@
 package core.config
 
+import java.io.PrintStream
+
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import core.FsbtUtil.stripQuotes
-import core.dependencies.{MavenDependency, MavenDependencyScope}
+import core.config.FsbtProject.Variables
+import core.dependencies.DependencyResolver._
+import core.dependencies.{DependencyResolver, MavenDependency, MavenDependencyScope}
 
 import scala.util.{Failure, Success}
 
 object ConfigBuilder {
 
-  def build(workDir: String): FsbtProject = stage0(workDir)
+  def build(workDir: String): FsbtProject = stage0(workDir, System.out)
 
-  def build(context: NGContext): FsbtProject = stage0(context.getWorkingDirectory)
+  def build(context: NGContext): FsbtProject = stage0(context.getWorkingDirectory, context.out)
 
-  private def stage0(workDir: String) = {
+  private def stage0(workDir: String, out: PrintStream) = {
     val configFilePath = workDir + "/build.fsbt"
+    stage1(parseConfigFile(configFilePath), configFilePath, workDir, out)
+  }
 
-    ConfigDSL.parseConfigFile(configFilePath) match {
-      case Success(configValues) => stage1(configValues, configFilePath, workDir)
+  private def parseConfigFile(path: String) = {
+    ConfigDSL.parseConfigFile(path) match {
+      case Success(configValues) => configValues
       case Failure(ex) => throw ex
     }
   }
 
-  private def stage1(configEntries: List[Any], configFilePath: String, workDir: String) = {
+  private def stage1(configEntries: List[Any], configFilePath: String, workDir: String, out: PrintStream) = {
     val variables = configEntries.collect { case Variable(key: String, value: String) => (key, value) }.toMap
-    val dependencies = configEntries.collect { case DependencyList(deps) => deps }.flatten.map(parseDependency(_, variables))
+    val dependencies = resolveAll(configEntries.collect { case DependencyList(deps) => deps }.flatten.map(parseDependency(_, variables)))
 
     val name = if (variables.contains("name")) {
       variables("name")
@@ -38,13 +45,34 @@ object ConfigBuilder {
       Environment.Unix
     }
 
-    val modules = getModules
+    val modules = getModules(workDir, variables, dependencies, environment, out,
+      configEntries.collect{ case Modules(moduleList) => moduleList.map(stripQuotes)}.flatten)
 
     FsbtProject(dependencies, workDir, File(workDir + "/target/"), name, environment, variables, modules)
   }
 
-  private def getModules: List[FsbtModule] = {
-    List()
+  private def getModules(workDir: String,
+                         variables: Variables,
+                         deps: List[MavenDependency],
+                         environment: Environment.Value,
+                         out: PrintStream,
+                         modulesList: List[String]) : List[FsbtProject] = {
+    modulesList.map{
+      module =>
+        val moduleWorkDir = s"$workDir/$module/"
+        val configFilePath = moduleWorkDir + "build.fsbt"
+        if(File(configFilePath).notExists) {
+          out.println(s"""Module \"$module\" is invalid""")
+        }
+
+        val configEntries = parseConfigFile(configFilePath)
+        val allVariables = variables ++ configEntries.collect { case Variable(key: String, value: String) => (key, value) }.toMap
+        val dependencies = deps ++ resolveAll(configEntries.collect { case DependencyList(d) => d }.flatten.map(parseDependency(_, allVariables)))
+        val modules = getModules(workDir, allVariables, dependencies, environment, out,
+          configEntries.collect{ case Modules(moduleList) => moduleList.map(stripQuotes)}.flatten)
+
+        FsbtProject(dependencies, workDir, File(workDir + "/target/"), module, environment, allVariables, modules)
+    }
   }
 
   private def resolveVariable(x: ValueOrVariable, variables: Map[String, String]) = {

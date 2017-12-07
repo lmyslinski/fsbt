@@ -1,10 +1,11 @@
-name := "fsbt-test-project"
 
-version := "0.0.1"
+name = "multi-module-project"
+version = "0.0.1"
+scalatest_version = "3.0.1"
 
-libraryDependencies ++= Seq(
+dependencies = {
     "junit" % "junit" % "4.12",
-    "org.scalatest" %% "scalatest" % "3.0.1"
-)
+    "org.scalatest" %% "scalatest" % ${scalatest_version} % "test"
+}
 
-submodules := ("submodule1")
+submodules = {"submodule1"}

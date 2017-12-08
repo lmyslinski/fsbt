@@ -31,7 +31,7 @@ object FsbtCache{
 
   def loadCache(): Unit = {
     if(File(zincCache).exists){
-      logger.debug("Loading cache...")
+//      logger.debug("Loading cache...")
       try{
         val fis = new FileInputStream(zincCache)
         cacheSerializer.read(kryo, new Input(fis))
@@ -43,7 +43,7 @@ object FsbtCache{
       }
 
     }
-    logger.debug(s"Cache: $localCache")
+//    logger.debug(s"Cache: $localCache")
   }
 
   def updateCache(config: FsbtProject, cr: CompileResult): Unit = {
@@ -51,7 +51,7 @@ object FsbtCache{
     val fstream = new FileOutputStream(zincCache)
     Externalizer(localCache).write(kryo, new Output(fstream))
     fstream.close()
-    logger.debug("Updated cache...")
+//    logger.debug("Updated cache...")
   }
 
   def getCompileResult(config: FsbtProject): PreviousResult = {

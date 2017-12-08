@@ -73,7 +73,7 @@ object ConfigBuilder {
         val modules = getModules(workDir, allVariables, dependencies, environment, out,
           configEntries.collect { case Modules(moduleList) => moduleList.map(stripQuotes) }.flatten)
 
-        FsbtProject(dependencies, workDir, File(workDir + "/target/"), module, environment, allVariables, modules)
+        FsbtProject(dependencies, moduleWorkDir, File(moduleWorkDir + "/target/"), module, environment, allVariables, modules)
     }
   }
 

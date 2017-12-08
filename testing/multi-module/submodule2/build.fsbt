@@ -1,0 +1,5 @@
+name = "fsbt-test-submodule-2"
+
+dependencies = {
+    "com.google.guava" % "guava" % "22.0"
+}

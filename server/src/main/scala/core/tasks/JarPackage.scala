@@ -11,7 +11,7 @@ import core.config.FsbtProject
 import scala.sys.process.Process
 import scala.util.matching.Regex
 
-object JarPackage extends Task with LazyLogging{
+class JarPackage extends Task with LazyLogging{
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
     mf.parent.createIfNotExists(asDirectory = true, createParents = true)

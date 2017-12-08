@@ -18,7 +18,6 @@ libraryDependencies ++=
     "com.google.code.findbugs" % "jsr305" % "3.0.2",
     "com.martiansoftware" % "nailgun-server" % "0.9.1",
     "com.twitter" %% "chill" % "0.9.2"
-
   )
 
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")

@@ -8,4 +8,4 @@ dependencies = {
     "org.scalatest" %% "scalatest" % ${scalatest_version} % "test"
 }
 
-submodules = {"submodule1"}
+submodules = {"submodule1", "submodule2"}

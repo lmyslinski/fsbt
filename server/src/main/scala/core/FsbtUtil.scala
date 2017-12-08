@@ -1,7 +1,10 @@
 package core
 
 import better.files.File
+import core.config.FsbtProject
+import core.dependencies.{MavenDependency, MavenDependencyScope}
 
+import scala.annotation.tailrec
 import scala.util.matching.Regex
 
 object FsbtUtil {
@@ -12,4 +15,13 @@ object FsbtUtil {
   }
 
   def stripQuotes(string: String): String = string.replaceAll("^\"|\"$", "")
+
+  def getNestedDependencies(config: FsbtProject, scope: MavenDependencyScope.Value = MavenDependencyScope.Compile): List[MavenDependency] = {
+    @tailrec
+    def getDependenciesRec(queue: List[FsbtProject], acc: List[MavenDependency]): List[MavenDependency] = queue match {
+      case Nil => acc
+      case head::tail => getDependenciesRec(tail ++ head.modules, config.dependencies.filter(_.scope == scope) ++ acc)
+    }
+    getDependenciesRec(config :: Nil, List())
+  }
 }

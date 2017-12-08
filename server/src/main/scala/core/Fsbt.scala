@@ -13,30 +13,27 @@ object Fsbt extends LazyLogging {
   }
 
   def nailMain(context: NGContext): Unit = {
-    val config = ConfigBuilder.build(context)
     val args = context.getArgs.toList
+    if(args.size == 1 && args.head == "stop"){
+      context.getNGServer.shutdown(true)
+    }
+
+    val config = ConfigBuilder.build(context)
     implicit val ctx: NGContext = context
 
-    if (args.isEmpty) {
-      context.out.println("fsbt@0.0.1")
-      config.dependencies.foreach(context.out.println)
-    } else
-      args.foreach {
-        case "stop" =>
-          context.getNGServer.shutdown(true)
-        case "compile" =>
-          new Compile().perform(config)
-        case "test" =>
-          new Compile().perform(config)
-          Test.perform(config)
-        case "run" =>
-          new Compile().perform(config)
-          Run.perform(config)
-        case "package" =>
-          new Compile().perform(config)
-          JarPackage.perform(config)
-        case "clean" => Clean.perform(config)
-        case unknown => context.out.println("command not found: " + unknown)
-      }
+    val deps = FsbtUtil.getNestedDependencies(config)
+
+    val tasks = args.flatMap {
+      case "compile" => List(new Compile())
+      case "test" => List(new Compile(), new Test())
+      case "run" => List(new Compile, new Run())
+      case "package" => List(new Compile(), new Compile(), new JarPackage())
+      case "clean" => List(new Clean())
+      case unknown =>
+        context.out.println(s"Command not found: $unknown")
+        List()
+    }
+
+    tasks.foreach(_.perform(config))
   }
 }

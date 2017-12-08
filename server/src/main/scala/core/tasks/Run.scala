@@ -11,12 +11,16 @@ import core.dependencies.{MavenDependency, MavenDependencyScope}
 import scala.sys.process._
 import scala.util.matching.Regex
 
-object Run extends Task with LazyLogging {
+class Run extends Task with LazyLogging {
 
   private def runtimeClassPath(config: FsbtProject) = {
     val scalaJarPaths = ScalaLocator.scalaInstance.allJars.map(_.toPath.toAbsolutePath.toString)
-    val runtimeDepsPaths = config.dependencies.filter(_.scope == MavenDependencyScope.Runtime).map(_.jarFile.path.toAbsolutePath.toString)
-    (scalaJarPaths ++ runtimeDepsPaths ++ Array(config.target.path.toAbsolutePath.toString)).foldLeft("")((dep, res) => dep + Environment.dirSeparator(config.environment) + res)
+    val runtimeDepsPaths = FsbtUtil.getNestedDependencies(config, MavenDependencyScope.Runtime).map(_.jarFile.path.toAbsolutePath.toString)
+    val moduleTargets = config.modules.map(_.target.toJava)
+    val target = config.target.path.toAbsolutePath.toString
+
+    (moduleTargets ++ scalaJarPaths ++ runtimeDepsPaths :+ target)
+      .foldRight("")((dep, res) => dep + Environment.pathSeparator(config.environment) + res)
   }
 
   // parse only top-level class files, omit nested classes
@@ -36,10 +40,11 @@ object Run extends Task with LazyLogging {
       val command = List("java",  "-cp", cp, cls)
       val output = command.lineStream
       output.foreach(ctx.out.println)
+
     }
   }
 
-  def transformClassFormat(packageString: String) = {
+  def transformClassFormat(packageString: String): String = {
     packageString.replace('/', '.')
   }
 }

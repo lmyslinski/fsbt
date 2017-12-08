@@ -26,11 +26,13 @@ class ZincCompiler {
 
   private val zincLogger = new xsbti.Logger {
 
-    override def debug(msg: Supplier[String]): Unit = logger.debug(msg.get())
+    override def debug(msg: Supplier[String]): Unit = ()
+    //logger.debug(msg.get())
 
     override def error(msg: Supplier[String]): Unit = logger.error(msg.get())
 
-    override def warn(msg: Supplier[String]): Unit = logger.warn(msg.get())
+    override def warn(msg: Supplier[String]): Unit = ()
+//      logger.warn(msg.get())
 
     override def trace(exception: Supplier[Throwable]): Unit = logger.trace(exception.get().getMessage, exception.get())
 
@@ -50,10 +52,9 @@ class ZincCompiler {
     Array.empty)
 
   lazy val compilers: Compilers = Compilers.create(compiler, javaTools)
+  lazy val cp: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
 
   def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject): CompileResult = {
-
-    val cp = ZincCompilerUtil.defaultIncrementalCompiler()
 
     val previousResult = FsbtCache.getCompileResult(config)
 
@@ -71,18 +72,11 @@ class ZincCompiler {
     cr
   }
 
-  private def getSourcePositionMapper = new Function[Position, Position]() {
-    override def apply(a: Position): Position = a
-  }
-
-
   private def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
 
-    override def definesClass(classpathEntry: File): DefinesClass = new DefinesClass {
-      override def apply(className: String): Boolean = {
-        logger.debug(s"checking $className on classpath")
-        true
-      }
+    override def definesClass(classpathEntry: File): DefinesClass = (className: String) => {
+      logger.debug(s"checking $className on classpath")
+      true
     }
 
     override def analysis(classpathEntry: File): Optional[CompileAnalysis] = Optional.empty()

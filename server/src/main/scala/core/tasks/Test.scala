@@ -9,16 +9,16 @@ import core.dependencies.MavenDependency
 import scala.sys.process._
 import scala.util.matching.Regex
 
-object Test extends Task with LazyLogging {
+class Test extends Task with LazyLogging {
 
+  def specsRegex = "".r
+  def TestRegex = "".r
 
   def getClasspath(config: FsbtProject) = config.dependencies.foldRight("")((dep, res) => dep.jarFile.path.toAbsolutePath.toString + Environment.pathSeparator(config.environment) + res) + "."
 
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
-    val scalaTest = List("java",  "-cp", getClasspath(config)) ++ List("org.scalatest.tools.Runner", "-R", s"${config.target}", "-o")
-    println(scalaTest)
+    val scalaTest = List("java",  "-cp", getClasspath(config)) ++ List("org.scalatest.tools.Runner", "-o", "-R", s"${config.target}")
     val output = scalaTest.!
   }
-
 }
 

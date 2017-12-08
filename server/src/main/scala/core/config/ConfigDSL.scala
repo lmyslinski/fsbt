@@ -2,37 +2,52 @@ package core.config
 
 import java.io.FileReader
 
+import core.config.FsbtExceptions.ConfigFileException
+
 import scala.util.Try
-import scala.util.parsing.combinator._
+import scala.util.parsing.combinator.JavaTokenParsers
 
-class ConfigDSL extends JavaTokenParsers {
+object ConfigDSL extends JavaTokenParsers {
 
-  def configuration = rep(expression)
+  // DSL value definitions
+  sealed trait ValueOrVarCall
+  case class Dependency(group: ValueOrVarCall, artifact: ValueOrVarCall, version: ValueOrVarCall, withScalaVersion: String, scope: Option[ValueOrVarCall])
+  case class DependencyList(deps: List[Dependency])
+  case class Modules(moduleList: List[String])
+  case class Variable(key: String, value: String)
+  case class VarCall(name: String) extends ValueOrVarCall
+  case class Value(value: String) extends ValueOrVarCall
 
-  def expression = variable | dependencies | module
+  def parseConfigFile(uri: String): Try[List[Any]] = Try {
+    parseAll(configuration, new FileReader(uri)) match {
+      case Success(res, _) => res
+      case Failure(res, ab) => throw ConfigFileException(res, ab)
+      case x: Error => throw ConfigFileException(x.msg, x.next)
+    }
+  }
 
-  // variable declaration definitions
+  // DSL parser
+  private def configuration = rep(expression)
 
-  def variable = stringVariable | intVariable | doubleVariable
+  private def expression = variable | dependencies | module
 
-  def stringVariable = ident ~ "=" ~ stringLiteral ^^ { case (a ~ b ~ c) => Variable(a, c) }
+  private def variable = stringVariable | intVariable | doubleVariable
 
-  def intVariable = ident ~ "=" ~ stringLiteral ^^ { case (a ~ b ~ c) => Variable(a, c) }
+  private def stringVariable = ident ~ "=" ~ stringLiteral ^^ { case (a ~ b ~ c) => Variable(a, c) }
 
-  def doubleVariable = ident ~ "=" ~ (decimalNumber | floatingPointNumber) ^^ { case (a ~ b ~ c) => Variable(a, c) }
+  private def intVariable = ident ~ "=" ~ stringLiteral ^^ { case (a ~ b ~ c) => Variable(a, c) }
 
-  // variable usage
+  private def doubleVariable = ident ~ "=" ~ (decimalNumber | floatingPointNumber) ^^ { case (a ~ b ~ c) => Variable(a, c) }
 
-  def variableCall = "${" ~ ident ~ "}" ^^ { case (a ~ b ~ c) => VariableCall(b) }
+  private def variableCall = "${" ~ ident ~ "}" ^^ { case (a ~ b ~ c) => VarCall(b) }
 
-  def literal = stringLiteral ^^ (x => Value(x))
+  private def literal = stringLiteral ^^ (x => Value(x))
 
-  def variableOrLiteral = variableCall | literal
+  private def variableOrLiteral = variableCall | literal
 
+  private def dependencies = "dependencies" ~ "=" ~ "{" ~ repsep(dependency, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => DependencyList(d) }
 
-  def dependencies = "dependencies" ~ "=" ~ "{" ~ repsep(dependency, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => DependencyList(d) }
-
-  def dependency =
+  private def dependency =
     variableOrLiteral ~ ("%%" | "%") ~ variableOrLiteral ~ "%" ~ variableOrLiteral ~ opt("%" ~ variableOrLiteral) ^^ { case (group ~ scalaVer ~ artifact ~ sep ~ version ~ scope0) =>
       val scp = if (scope0.isDefined) {
         Some(scope0.get._2)
@@ -40,35 +55,6 @@ class ConfigDSL extends JavaTokenParsers {
       Dependency(group, artifact, version, scalaVer, scp)
     }
 
-
-  def module = "submodules" ~ "=" ~ "{" ~ repsep(stringLiteral, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => Modules(d) }
+  private def module = "submodules" ~ "=" ~ "{" ~ repsep(stringLiteral, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => Modules(d) }
 }
 
-object ConfigDSL extends ConfigDSL {
-
-  def parseConfigFile(uri: String): Try[List[Any]] = Try {
-    parseAll(configuration, new FileReader(uri)) match {
-      case Success(res, _) => res
-      case Failure(res, ab) => throw ConfigFileException(res, ab)
-    }
-  }
-}
-
-
-//case class PureString(value: String) extends ConfigValue
-
-sealed trait ConfigValue
-
-case class Dependency(group: ValueOrVariable, artifact: ValueOrVariable, version: ValueOrVariable, withScalaVersion: String, scope: Option[ValueOrVariable]) extends ConfigValue
-
-case class DependencyList(deps: List[Dependency])
-
-case class Modules(moduleList: List[String]) extends ConfigValue
-
-case class Variable(key: String, value: String) extends ConfigValue
-
-sealed trait ValueOrVariable extends ConfigValue
-
-case class VariableCall(name: String) extends ValueOrVariable
-
-case class Value(value: String) extends ValueOrVariable

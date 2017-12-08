@@ -16,13 +16,6 @@ class MavenDependency(
 
   override def toString: String = s"$descriptor"
 
-//  def this(dependency: Dependency) = this(
-//    MavenDependency.stripQuotes(dependency.group),
-//    MavenDependency.stripQuotes(dependency.artifact),
-//    MavenDependency.stripQuotes(dependency.version),
-//    withScalaVersion = dependency.withScalaVersion
-//  )
-
   def copyWith(groupId: String = groupId, artifactId: String = artifactId, version: String = version): MavenDependency = {
     new MavenDependency(groupId, artifactId, version, optional, withScalaVersion, scope)
   }

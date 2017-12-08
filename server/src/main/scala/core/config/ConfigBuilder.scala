@@ -5,9 +5,11 @@ import java.io.PrintStream
 import better.files.File
 import com.martiansoftware.nailgun.NGContext
 import core.FsbtUtil.stripQuotes
+import core.config.ConfigDSL.{Dependency, DependencyList, Modules, Value, ValueOrVarCall, VarCall, Variable}
 import core.config.FsbtProject.Variables
-import core.dependencies.DependencyResolver._
-import core.dependencies.{DependencyResolver, MavenDependency, MavenDependencyScope}
+import core.dependencies.DependencyResolver.resolveAll
+import core.dependencies.{MavenDependency, MavenDependencyScope}
+import core.config.FsbtExceptions.ConfigFileValidationException
 
 import scala.util.{Failure, Success}
 
@@ -46,7 +48,7 @@ object ConfigBuilder {
     }
 
     val modules = getModules(workDir, variables, dependencies, environment, out,
-      configEntries.collect{ case Modules(moduleList) => moduleList.map(stripQuotes)}.flatten)
+      configEntries.collect { case Modules(moduleList) => moduleList.map(stripQuotes) }.flatten)
 
     FsbtProject(dependencies, workDir, File(workDir + "/target/"), name, environment, variables, modules)
   }
@@ -56,12 +58,12 @@ object ConfigBuilder {
                          deps: List[MavenDependency],
                          environment: Environment.Value,
                          out: PrintStream,
-                         modulesList: List[String]) : List[FsbtProject] = {
-    modulesList.map{
+                         modulesList: List[String]): List[FsbtProject] = {
+    modulesList.map {
       module =>
         val moduleWorkDir = s"$workDir/$module/"
         val configFilePath = moduleWorkDir + "build.fsbt"
-        if(File(configFilePath).notExists) {
+        if (File(configFilePath).notExists) {
           out.println(s"""Module \"$module\" is invalid""")
         }
 
@@ -69,16 +71,16 @@ object ConfigBuilder {
         val allVariables = variables ++ configEntries.collect { case Variable(key: String, value: String) => (key, value) }.toMap
         val dependencies = deps ++ resolveAll(configEntries.collect { case DependencyList(d) => d }.flatten.map(parseDependency(_, allVariables)))
         val modules = getModules(workDir, allVariables, dependencies, environment, out,
-          configEntries.collect{ case Modules(moduleList) => moduleList.map(stripQuotes)}.flatten)
+          configEntries.collect { case Modules(moduleList) => moduleList.map(stripQuotes) }.flatten)
 
         FsbtProject(dependencies, workDir, File(workDir + "/target/"), module, environment, allVariables, modules)
     }
   }
 
-  private def resolveVariable(x: ValueOrVariable, variables: Map[String, String]) = {
+  private def resolveVariable(x: ValueOrVarCall, variables: Variables) = {
     x match {
       case Value(rawValue) => rawValue
-      case VariableCall(key) =>
+      case VarCall(key) =>
         if (variables.contains(key))
           variables(key)
         else
@@ -86,7 +88,7 @@ object ConfigBuilder {
     }
   }
 
-  private def parseDependency(dep: Dependency, variables: Map[String, String]) = {
+  private def parseDependency(dep: Dependency, variables: Variables) = {
     val artifact = stripQuotes(resolveVariable(dep.artifact, variables))
     val group = stripQuotes(resolveVariable(dep.group, variables))
     val version = stripQuotes(resolveVariable(dep.version, variables))
@@ -96,54 +98,5 @@ object ConfigBuilder {
     } else MavenDependencyScope.Compile
     new MavenDependency(group, artifact, version, false, withScalaDeps, scope)
   }
-
-
-  //    val config: Map[ConfigEntry.Value, Any] = (for {
-  //      _ <- ConfigValidator.validateConfigFileExists(configFilePath)
-  //      configMap <- ConfigDSL.parseConfigFile(configFilePath)
-  //    } yield buildConfig(configMap, workDir)).get
-  //
-
-
-  //    new FsbtConfig(
-  //      config(ConfigEntry.dependencyList).asInstanceOf[List[Dependency]].map(new MavenDependency(_)),
-  //      File(config(ConfigEntry.targetDirectory).toString),
-  //      config(ConfigEntry.workingDir).toString, config(ConfigEntry.name).toString,
-  //      environment)
-
-
-  //  val withScalaVersion = if (scalaVer.length == 2) true else false
-  //  val scope = if(scope0.isDefined){
-  //    scope0.get._2
-  //  }else{
-  //    "compile"
-  //  }
-
-
-  // TODO make this actually make sense
-  //  private def buildConfig(configMap: Map[ConfigEntry.Value, ConfigValue], workDir: String): Map[ConfigEntry.Value, Any] = {
-  //
-  //    val defaultConfig = Map(
-  //      (ConfigEntry.workingDir, workDir),
-  //      (ConfigEntry.sourceDirectory, workDir + "/src/"),
-  //      (ConfigEntry.targetDirectory, workDir + "/target/"),
-  //      (ConfigEntry.version, "1.0"),
-  //      (ConfigEntry.name, ""),
-  //      (ConfigEntry.dependencyList, "")
-  //    )
-  //
-  //    defaultConfig.map((keyValue) => {
-  //      val key = keyValue._1
-  //      if (configMap.keySet.contains(key)) {
-  //        configMap(key) match {
-  //          case PureString(value) => (key, value)
-  //          case DependencyList(list) => (key, list)
-  //          case Modules(list) => (key, list)
-  //        }
-  //      } else {
-  //        keyValue
-  //      }
-  //    })
-  //  }
 }
 

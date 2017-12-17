@@ -14,7 +14,7 @@ object Fsbt extends LazyLogging {
 
   def nailMain(context: NGContext): Unit = {
     val args = context.getArgs.toList
-    if(args.size == 1 && args.head == "stop"){
+    if(args.length == 1 && args.head == "stop"){
       context.getNGServer.shutdown(true)
     }
 
@@ -27,7 +27,7 @@ object Fsbt extends LazyLogging {
       case "compile" => List(new Compile())
       case "test" => List(new Compile(), new Test())
       case "run" => List(new Compile, new Run())
-      case "package" => List(new Compile(), new Compile(), new JarPackage())
+      case "package" => List(new Compile(), new Test(), new JarPackage())
       case "clean" => List(new Clean())
       case unknown =>
         context.out.println(s"Command not found: $unknown")

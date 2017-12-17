@@ -16,6 +16,7 @@ object FsbtUtil {
 
   def stripQuotes(string: String): String = string.replaceAll("^\"|\"$", "")
 
+  // do not use
   def getNestedDependencies(config: FsbtProject, scope: MavenDependencyScope.Value = MavenDependencyScope.Compile): List[MavenDependency] = {
     @tailrec
     def getDependenciesRec(queue: List[FsbtProject], acc: List[MavenDependency]): List[MavenDependency] = queue match {

@@ -2,22 +2,17 @@ package compiler
 
 import java.io.File
 import java.lang.{Boolean => JBoolean}
-import java.net.{URL, URLClassLoader}
 import java.util.Optional
 import java.util.function.{Supplier, Function => JFunction}
 
-import better.files
 import com.typesafe.scalalogging.Logger
-import core.Fsbt.logger
 import core.cache.FsbtCache
 import core.config.FsbtProject
 import org.slf4j.LoggerFactory
-import xsbti.compile.IncOptions
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
-import sbt.internal.inc.{AnalyzingCompiler, ScalaInstance, ZincUtil}
-import sbt.io.Path
+import sbt.internal.inc.{AnalyzingCompiler, ZincUtil}
 import xsbti._
-import xsbti.compile._
+import xsbti.compile.{IncOptions, _}
 
 class ZincCompiler {
 
@@ -27,9 +22,10 @@ class ZincCompiler {
   private val zincLogger = new xsbti.Logger {
 
     override def debug(msg: Supplier[String]): Unit = ()
-    //logger.debug(msg.get())
+//      logger.debug(msg.get())
 
-    override def error(msg: Supplier[String]): Unit = logger.error(msg.get())
+    override def error(msg: Supplier[String]): Unit = ()
+//    logger.error(msg.get())
 
     override def warn(msg: Supplier[String]): Unit = ()
 //      logger.warn(msg.get())
@@ -40,7 +36,7 @@ class ZincCompiler {
   }
 
 
-  // TODO: consider caching mini setup between launches, so that we don't get a fresh compilation with each run
+  // TODO: consider caching mini setup between launches, so that we don't get a fresh compilation with each launch
   lazy val setup: Setup = Setup.create(
     getPerClasspathEntryLookup,
     false,
@@ -54,7 +50,7 @@ class ZincCompiler {
   lazy val compilers: Compilers = Compilers.create(compiler, javaTools)
   lazy val cp: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
 
-  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject): CompileResult = {
+  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject): Option[CompileResult] = {
 
     val previousResult = FsbtCache.getCompileResult(config)
 
@@ -64,12 +60,18 @@ class ZincCompiler {
         .withSources(sourceFiles),
       setup,
       previousResult)
-    val cr = cp.compile(inputs, zincLogger)
-    if (cr.hasModified) {
-      FsbtCache.updateCache(config, cr)
+    try{
+      val cr = cp.compile(inputs, zincLogger)
+       if (cr.hasModified) {
+         FsbtCache.updateCache(config, cr)
+       }
+      Some(cr)
+    }catch{
+      case ex: Exception => logger.debug("FKC", ex)
+      None
     }
 
-    cr
+
   }
 
   private def getPerClasspathEntryLookup = new PerClasspathEntryLookup {

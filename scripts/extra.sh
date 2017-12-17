@@ -24,8 +24,6 @@ execRunner () {
 
 # Actually runs the script.
 run() {
-  # TODO - check for sane environment
-
   # process the combined args, then reset "$@" to the residuals
   process_args "$@"
   set -- "${residual_args[@]}"

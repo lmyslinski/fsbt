@@ -9,7 +9,6 @@ import scala.annotation.tailrec
 
 class Clean extends Task with LazyLogging{
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
-    clean(flatten(config))
 
     def flatten(config: FsbtProject): List[File] = {
       config.target :: config.modules.flatMap(flatten)
@@ -26,6 +25,11 @@ class Clean extends Task with LazyLogging{
           clean(tail)
         case Nil => ()
       }
+    }
+
+
+    if(config.target.exists){
+      clean(flatten(config))
     }
   }
 }

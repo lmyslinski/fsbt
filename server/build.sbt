@@ -17,7 +17,8 @@ libraryDependencies ++=
     "com.google.guava" % "guava" % "23.0",
     "com.google.code.findbugs" % "jsr305" % "3.0.2",
     "com.martiansoftware" % "nailgun-server" % "0.9.1",
-    "com.twitter" %% "chill" % "0.9.2"
+    "com.twitter" %% "chill" % "0.9.2",
+    "com.novocode" % "junit-interface" % "0.11"
   )
 
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")

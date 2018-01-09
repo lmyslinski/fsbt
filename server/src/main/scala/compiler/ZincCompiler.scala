@@ -5,10 +5,9 @@ import java.lang.{Boolean => JBoolean}
 import java.util.Optional
 import java.util.function.{Supplier, Function => JFunction}
 
-import com.typesafe.scalalogging.Logger
+import ch.qos.logback.classic.Logger
 import core.cache.FsbtCache
 import core.config.FsbtProject
-import org.slf4j.LoggerFactory
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
 import sbt.internal.inc.{AnalyzingCompiler, ZincUtil}
 import xsbti._
@@ -16,10 +15,7 @@ import xsbti.compile.{IncOptions, _}
 
 class ZincCompiler {
 
-
-  private val logger = Logger(LoggerFactory.getLogger(this.getClass))
-
-  private val zincLogger = new xsbti.Logger {
+  private def zincLogger(implicit logger: Logger) = new xsbti.Logger {
 
     override def debug(msg: Supplier[String]): Unit = ()
 //      logger.debug(msg.get())
@@ -37,7 +33,7 @@ class ZincCompiler {
 
 
   // TODO: consider caching mini setup between launches, so that we don't get a fresh compilation with each launch
-  lazy val setup: Setup = Setup.create(
+  def setup(implicit logger: Logger): Setup = Setup.create(
     getPerClasspathEntryLookup,
     false,
     new File(FsbtProject.zincCache),
@@ -47,10 +43,10 @@ class ZincCompiler {
     Optional.empty(),
     Array.empty)
 
-  lazy val compilers: Compilers = Compilers.create(compiler, javaTools)
+  def compilers(implicit logger: Logger): Compilers = Compilers.create(compiler, javaTools)
   lazy val cp: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
 
-  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject): Option[CompileResult] = {
+  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject)(implicit logger: Logger): Option[CompileResult] = {
 
     val previousResult = FsbtCache.getCompileResult(config)
 
@@ -74,7 +70,7 @@ class ZincCompiler {
 
   }
 
-  private def getPerClasspathEntryLookup = new PerClasspathEntryLookup {
+  private def getPerClasspathEntryLookup(implicit logger: Logger) = new PerClasspathEntryLookup {
 
     override def definesClass(classpathEntry: File): DefinesClass = (className: String) => {
       logger.debug(s"checking $className on classpath")
@@ -103,13 +99,13 @@ class ZincCompiler {
       )
     )
 
-  private def getBridge = {
+  private def getBridge(implicit logger: Logger) = {
     val qq = ZincUtil.constantBridgeProvider(ScalaLocator.scalaInstance, ScalaLocator.getJar("compiler-bridge"))
     qq.fetchCompiledBridge(ScalaLocator.scalaInstance, zincLogger)
   }
 
 
-  def compiler: AnalyzingCompiler = ZincUtil.scalaCompiler(ScalaLocator.scalaInstance, getBridge)
+  def compiler(implicit logger: Logger): AnalyzingCompiler = ZincUtil.scalaCompiler(ScalaLocator.scalaInstance, getBridge)
 
   def javaTools = JavaTools(JavaCompiler.fork(), Javadoc.fork())
 }

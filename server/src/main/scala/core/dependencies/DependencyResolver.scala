@@ -5,7 +5,7 @@ import java.net.URL
 import java.nio.file.{Files, StandardCopyOption}
 
 import better.files.File
-import com.typesafe.scalalogging.Logger
+import ch.qos.logback.classic.Logger
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Seq
@@ -22,9 +22,8 @@ import scala.xml.{Elem, NodeSeq, XML}
 object DependencyResolver {
 
   private val pomVariableRegex = """\$\{(.*)\}""".r
-  private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
-  def resolveAll(dependencies: List[MavenDependency]): List[MavenDependency] = {
+  def resolveAll(dependencies: List[MavenDependency])(implicit logger: Logger): List[MavenDependency] = {
     logger.debug("Resolving dependencies...")
     val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
@@ -89,7 +88,7 @@ object DependencyResolver {
     }
   }
 
-  private def resolveRecursive(dependency: MavenDependency): List[MavenDependency] = {
+  private def resolveRecursive(dependency: MavenDependency)(implicit logger: Logger): List[MavenDependency] = {
     val pom = XML.loadFile(getPom(dependency).toJava)
     val parentPom = getParentPom(pom)
 
@@ -137,19 +136,19 @@ object DependencyResolver {
     deps.map(toMavenDependency)
   }
 
-  private def getParentPom(pom: Elem): Option[Elem] = {
+  private def getParentPom(pom: Elem)(implicit logger: Logger): Option[Elem] = {
     val parent = pom \ "parent"
     if (parent.nonEmpty) Some(XML.loadFile(getPom(toMavenDependency(parent)).toJava)) else None
   }
 
-  private def getPom(dependency: MavenDependency): File = {
+  private def getPom(dependency: MavenDependency)(implicit logger: Logger): File = {
     if (!dependency.pomFile.exists) {
       downloadPom(dependency)
     }
     dependency.pomFile
   }
 
-  private def downloadPom(dependency: MavenDependency): File = {
+  private def downloadPom(dependency: MavenDependency)(implicit logger: Logger): File = {
     try {
 //      logger.debug(s"Downloading ${dependency.pomUrl}")
       val website = new URL(dependency.pomUrl)

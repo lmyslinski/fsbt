@@ -3,6 +3,7 @@ package core.config
 import java.io.PrintStream
 
 import better.files.File
+import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import core.FsbtUtil.stripQuotes
 import core.config.ConfigDSL.{Dependency, DependencyList, Modules, Value, ValueOrVarCall, VarCall, Variable}
@@ -15,11 +16,11 @@ import scala.util.{Failure, Success}
 
 object ConfigBuilder{
 
-  def build(workDir: String): FsbtProject = stage0(workDir, System.out)
+  def build(workDir: String)(implicit logger: Logger): FsbtProject = stage0(workDir, System.out)
 
-  def build(context: NGContext): FsbtProject = stage0(context.getWorkingDirectory, context.out)
+  def build(context: NGContext)(implicit logger: Logger): FsbtProject = stage0(context.getWorkingDirectory, context.out)
 
-  private def stage0(workDir: String, out: PrintStream) = {
+  private def stage0(workDir: String, out: PrintStream)(implicit logger: Logger) = {
     val configFilePath = workDir + "/build.fsbt"
     stage1(parseConfigFile(configFilePath), configFilePath, workDir, out)
   }
@@ -31,7 +32,7 @@ object ConfigBuilder{
     }
   }
 
-  private def stage1(configEntries: List[Any], configFilePath: String, workDir: String, out: PrintStream) = {
+  private def stage1(configEntries: List[Any], configFilePath: String, workDir: String, out: PrintStream)(implicit logger: Logger) = {
     val variables = configEntries.collect { case Variable(key: String, value: String) => (key, value) }.toMap
 
     val dependencies = resolveAll(configEntries.collect { case DependencyList(deps) => deps }.flatten.map(parseDependency(_, variables)))
@@ -59,7 +60,7 @@ object ConfigBuilder{
                          deps: List[MavenDependency],
                          environment: Environment.Value,
                          out: PrintStream,
-                         modulesList: List[String]): List[FsbtProject] = {
+                         modulesList: List[String])(implicit logger: Logger): List[FsbtProject] = {
     modulesList.map {
       module =>
         val moduleWorkDir = s"$workDir/$module/"

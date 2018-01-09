@@ -1,24 +1,25 @@
 package core.tasks
 
 import better.files.File
+import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
-import com.typesafe.scalalogging.LazyLogging
 import compiler.ZincCompiler
 import core.FsbtUtil
 import core.cache.FsbtCache
-import core.config.{Environment, FsbtProject}
+import core.config.FsbtProject
 import core.dependencies.{DependencyDownloader, MavenDependencyScope}
+import util.LazyNailLogging
 import xsbti.compile.CompileResult
 
 import scala.util.matching.Regex
 
-class Compile extends Task with LazyLogging {
+class Compile extends Task with LazyNailLogging {
 
-
-  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
+  override def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit = {
 
     val compileResults = config.modules.map(compileModule)
     val cr = compileModule(config)
+
     logger.debug("Compile task complete")
   }
 
@@ -31,10 +32,10 @@ class Compile extends Task with LazyLogging {
 //          res) + "."
 
 
-  def compileModule(config: FsbtProject): Option[CompileResult] = {
+  def compileModule(config: FsbtProject)(implicit logger: Logger): Option[CompileResult] = {
     DependencyDownloader.resolveAll(config.dependencies)
     config.target.createIfNotExists(asDirectory = true)
-    logger.debug(s"Compiling ${config.projectName}...")
+//    logger.debug(s"Compiling ${config.projectName}...")
 
 
     val srcRoot = File(config.workingDir + "/src")
@@ -53,7 +54,7 @@ class Compile extends Task with LazyLogging {
         Compile.cp.compile(classPath, sourceFiles, config)
       } catch {
         case ex: Exception =>
-          logger.debug("Compilation failed:", ex)
+//          logger.debug("Compilation failed:", ex)
           None
       }
     }else{
@@ -67,7 +68,6 @@ class Compile extends Task with LazyLogging {
 
     getScalaSourceFiles ++ getJavaSourceFiles
   }
-
 }
 
 object Compile {

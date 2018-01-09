@@ -5,18 +5,16 @@ import java.net.URL
 import java.nio.file.{Files, StandardCopyOption}
 
 import better.files.File
-import com.typesafe.scalalogging.Logger
+import ch.qos.logback.classic.Logger
 import org.slf4j.LoggerFactory
 
 object DependencyDownloader {
 
-  private val logger = Logger(LoggerFactory.getLogger(this.getClass))
-
-  def resolveAll(dependencies: List[MavenDependency]): Unit ={
+  def resolveAll(dependencies: List[MavenDependency])(implicit logger: Logger): Unit ={
     dependencies.foreach(downloadJar)
   }
 
-  def downloadJar(dependency: MavenDependency): Unit ={
+  def downloadJar(dependency: MavenDependency)(implicit logger: Logger): Unit ={
 
     if(dependency.jarFile.notExists){
       try{

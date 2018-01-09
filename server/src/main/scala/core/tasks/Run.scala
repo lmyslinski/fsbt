@@ -1,17 +1,17 @@
 package core.tasks
 
+import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
-import com.typesafe.scalalogging.LazyLogging
 import compiler.ScalaLocator
 import context.ContextUtil
 import core.FsbtUtil
 import core.config.{Environment, FsbtProject}
-import core.dependencies.{MavenDependency, MavenDependencyScope}
+import core.dependencies.MavenDependencyScope
 
 import scala.sys.process._
 import scala.util.matching.Regex
 
-class Run extends Task with LazyLogging {
+class Run extends Task {
 
   private def runtimeClassPath(config: FsbtProject) = {
     val scalaJarPaths = ScalaLocator.scalaInstance.allJars.map(_.toPath.toAbsolutePath.toString)
@@ -26,20 +26,20 @@ class Run extends Task with LazyLogging {
   // parse only top-level class files, omit nested classes
   val classRegex = new Regex("^[^$]+.class$")
 
-  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
+  override def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit = {
 
 
     val runCtx = ContextUtil.identifyContext(FsbtUtil.recursiveListFiles(config.target.toString(), classRegex))
     val cp = runtimeClassPath(config)
 
     if (runCtx.isEmpty) {
-      ctx.out.println("No context were found")
+      logger.info("No context were found")
     } else {
       val className = runCtx.head.className.get
       val cls = transformClassFormat(className)
       val command = List("java",  "-cp", cp, cls)
       val output = command.lineStream
-      output.foreach(ctx.out.println)
+      output.foreach(logger.info)
 
     }
   }
@@ -49,3 +49,6 @@ class Run extends Task with LazyLogging {
   }
 }
 
+object Run{
+
+}

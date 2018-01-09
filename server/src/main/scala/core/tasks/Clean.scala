@@ -1,6 +1,7 @@
 package core.tasks
 
 import better.files.File
+import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.config.FsbtProject
@@ -8,7 +9,7 @@ import core.config.FsbtProject
 import scala.annotation.tailrec
 
 class Clean extends Task with LazyLogging{
-  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
+  override def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit = {
 
     def flatten(config: FsbtProject): List[File] = {
       config.target :: config.modules.flatMap(flatten)

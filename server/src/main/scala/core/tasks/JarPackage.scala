@@ -3,16 +3,18 @@ package core.tasks
 import java.io.PrintWriter
 
 import better.files.File
+import ch.qos.logback.classic
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.FsbtUtil
 import core.config.FsbtProject
+import org.slf4j.Logger
 
 import scala.sys.process.Process
 import scala.util.matching.Regex
 
 class JarPackage extends Task with LazyLogging{
-  override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
+  def perform(config: FsbtProject)(implicit ctx: NGContext, logger: classic.Logger): Unit = {
     logger.debug(s"Packaging ${config.projectName}...")
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
     mf.parent.createIfNotExists(asDirectory = true, createParents = true)
@@ -33,4 +35,8 @@ class JarPackage extends Task with LazyLogging{
     logger.debug(s"Generated ${config.projectName}.jar at ${config.target}")
 
   }
+}
+
+object JarPackage{
+
 }

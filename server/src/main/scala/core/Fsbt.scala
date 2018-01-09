@@ -1,27 +1,27 @@
 package core
 
+import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
-import com.typesafe.scalalogging.LazyLogging
 import core.config._
 import core.tasks._
+import util.LazyNailLogging
 
 
-object Fsbt extends LazyLogging {
+object Fsbt extends LazyNailLogging {
 
   def main(args: Array[String]): Unit = {
-    println("Not running as nailgun!")
+    println("Not running as nailgun! Exiting")
   }
 
   def nailMain(context: NGContext): Unit = {
+
+    implicit val logger: Logger = getLogger(context)
+    implicit val ctx: NGContext = context
+
     val args = context.getArgs.toList
     if(args.length == 1 && args.head == "stop"){
       context.getNGServer.shutdown(true)
     }
-
-    val config = ConfigBuilder.build(context)
-    implicit val ctx: NGContext = context
-
-    val deps = FsbtUtil.getNestedDependencies(config)
 
     val tasks = args.flatMap {
       case "stop" => List(new Stop())
@@ -35,6 +35,7 @@ object Fsbt extends LazyLogging {
         List()
     }
 
+    val config = ConfigBuilder.build(context)
     tasks.foreach(_.perform(config))
   }
 }

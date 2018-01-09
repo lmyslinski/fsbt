@@ -1,2 +1,10 @@
 rootProject.name = 'gradle-example'
 include 'subproject0'
+include 'subproject1'
+include 'subproject2'
+include 'subproject3'
+include 'subproject4'
+include 'subproject5'
+include 'subproject6'
+include 'subproject7'
+

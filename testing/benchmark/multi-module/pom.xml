@@ -24,13 +24,13 @@
 
   <modules>
     <module>subproject0</module>
-    <!--<module>subproject1</module>-->
-    <!--<module>subproject2</module>-->
-    <!--<module>subproject3</module>-->
-    <!--<module>subproject4</module>-->
-    <!--<module>subproject5</module>-->
-    <!--<module>subproject6</module>-->
-    <!--<module>subproject7</module>-->
+    <module>subproject1</module>
+    <module>subproject2</module>
+    <module>subproject3</module>
+    <module>subproject4</module>
+    <module>subproject5</module>
+    <module>subproject6</module>
+    <module>subproject7</module>
     <!--<module>subproject8</module>-->
     <!--<module>subproject9</module>-->
     <!--<module>subproject10</module>-->

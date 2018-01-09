@@ -21,7 +21,7 @@ object DependencyDownloader {
     if(dependency.jarFile.notExists){
       try{
         dependency.jarFile.createDirectories().createIfNotExists()
-        logger.debug(s"Downloading ${dependency.jarUrl}")
+//        logger.debug(s"Downloading ${dependency.jarUrl}")
         val jarWebsite = new URL(dependency.jarUrl)
         val in2 = jarWebsite.openConnection().getInputStream
         Files.copy(in2, dependency.jarFile.path, StandardCopyOption.REPLACE_EXISTING)

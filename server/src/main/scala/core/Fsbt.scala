@@ -24,6 +24,7 @@ object Fsbt extends LazyLogging {
     val deps = FsbtUtil.getNestedDependencies(config)
 
     val tasks = args.flatMap {
+      case "stop" => List(new Stop())
       case "compile" => List(new Compile())
       case "test" => List(new Compile(), new Test())
       case "run" => List(new Compile, new Run())

@@ -12,7 +12,7 @@
   <packaging>jar</packaging>
   <version>1.0.0-SNAPSHOT</version>
 
-  <name>Subproject 0</name>
+  <name>subproject0</name>
 
   <dependencies>
     <dependency>

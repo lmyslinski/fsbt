@@ -24,7 +24,7 @@ class Test extends Task with LazyLogging {
           Environment.pathSeparator(config.environment) +
           res) + "."
 
-  // TODO fix concurrent testing - weird future execution
+  // TODO fix concurrent testing - weird future execution on subsequent runs
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
 //    logger.debug(config.modules.length.toString)
 //    val future = config.modules.map(x => Future(testModule(x)))

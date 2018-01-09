@@ -13,7 +13,7 @@ import core.config.FsbtExceptions.ConfigFileValidationException
 
 import scala.util.{Failure, Success}
 
-object ConfigBuilder {
+object ConfigBuilder{
 
   def build(workDir: String): FsbtProject = stage0(workDir, System.out)
 
@@ -33,10 +33,11 @@ object ConfigBuilder {
 
   private def stage1(configEntries: List[Any], configFilePath: String, workDir: String, out: PrintStream) = {
     val variables = configEntries.collect { case Variable(key: String, value: String) => (key, value) }.toMap
+
     val dependencies = resolveAll(configEntries.collect { case DependencyList(deps) => deps }.flatten.map(parseDependency(_, variables)))
 
     val name = if (variables.contains("name")) {
-      variables("name")
+      stripQuotes(variables("name"))
     } else {
       throw new ConfigFileValidationException("must contain a \"name\" variable")
     }

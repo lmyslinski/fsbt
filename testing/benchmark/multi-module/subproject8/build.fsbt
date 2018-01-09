@@ -1,0 +1,8 @@
+name = "subproject8"
+
+scalatest_version = "3.0.1"
+
+dependencies = {
+    "junit" % "junit" % "4.12",
+    "org.scalatest" %% "scalatest" % ${scalatest_version} % "test"
+}

@@ -11,3 +11,4 @@ target
 build
 out
 
+testing/benchmark/single-module/src/main/scala/root/nested

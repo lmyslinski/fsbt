@@ -1,4 +1,4 @@
-name = "long-multi-test"
+name = "subproject0"
 
 scalatest_version = "3.0.1"
 

@@ -17,7 +17,7 @@ class Compile extends Task with LazyLogging {
 
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
 
-    val compileResults = config.modules.par.map(compileModule)
+    val compileResults = config.modules.map(compileModule)
     val cr = compileModule(config)
     logger.debug("Compile task complete")
   }

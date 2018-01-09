@@ -13,6 +13,7 @@ import scala.util.matching.Regex
 
 class JarPackage extends Task with LazyLogging{
   override def perform(config: FsbtProject)(implicit ctx: NGContext): Unit = {
+    logger.debug(s"Packaging ${config.projectName}...")
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")
     mf.parent.createIfNotExists(asDirectory = true, createParents = true)
     val manifestFile = mf.toJava
@@ -25,7 +26,11 @@ class JarPackage extends Task with LazyLogging{
       FsbtUtil.recursiveListFiles(s"${config.target}", new Regex(".*\\.class"))
         .map(_.pathAsString.split(config.target.pathAsString + '/')(1))
 
-    val jarCmd = List("jar", "cfm", config.target.toString + s"/${config.projectName}.jar", manifestFile.getPath) ::: classes
+    val name = config.target.toString + s"/${config.projectName}.jar"
+
+    val jarCmd = List("jar", "cfm", name, manifestFile.getPath) ::: classes
     Process(jarCmd, config.target.toJava).!
+    logger.debug(s"Generated ${config.projectName}.jar at ${config.target}")
+
   }
 }

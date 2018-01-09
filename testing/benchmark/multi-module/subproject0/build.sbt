@@ -1,4 +1,4 @@
-name := "sbt-example0"
+name := "subproject0"
 
 organization := "com.example"
 

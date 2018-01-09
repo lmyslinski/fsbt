@@ -1,0 +1,22 @@
+//apply plugin: 'scala'
+
+plugins {
+    id "com.github.maiflai.scalatest" version "0.18"
+}
+
+apply plugin: 'scala'
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.4'
+    testCompile 'org.scalatest:scalatest_2.12:3.0.0'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.scalatest:scalatest_2.12:3.0.1'
+    testRuntime 'org.pegdown:pegdown:1.4.2'
+}
+
+repositories {
+  jcenter()
+  mavenCentral()
+}
+
+

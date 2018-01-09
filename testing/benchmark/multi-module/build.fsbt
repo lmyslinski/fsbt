@@ -9,5 +9,12 @@ dependencies = {
 }
 
 submodules = {
- "subproject0"
- }
+ "subproject0",
+ "subproject1",
+ "subproject2",
+ "subproject3",
+ "subproject4",
+ "subproject5",
+ "subproject6",
+ "subproject7"
+}

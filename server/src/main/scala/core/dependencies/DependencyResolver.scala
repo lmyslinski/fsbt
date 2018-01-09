@@ -25,6 +25,7 @@ object DependencyResolver {
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
   def resolveAll(dependencies: List[MavenDependency]): List[MavenDependency] = {
+    logger.debug("Resolving dependencies...")
     val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
     val c = b.map{
@@ -32,6 +33,7 @@ object DependencyResolver {
         val winner = deps.reduce(max)
         winner.copyWith(version = winner.version)
     }.toList
+    logger.debug("All dependencies resolved")
     c
   }
 
@@ -149,7 +151,7 @@ object DependencyResolver {
 
   private def downloadPom(dependency: MavenDependency): File = {
     try {
-      logger.debug(s"Downloading ${dependency.pomUrl}")
+//      logger.debug(s"Downloading ${dependency.pomUrl}")
       val website = new URL(dependency.pomUrl)
       val in = website.openConnection().getInputStream
       dependency.pomFile.parent.createDirectories()

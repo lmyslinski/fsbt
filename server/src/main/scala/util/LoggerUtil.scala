@@ -17,7 +17,7 @@ object LoggerUtil {
     // Encoder
     val encoder = new PatternLayoutEncoder
     encoder.setContext(context)
-    encoder.setPattern("%d{HH:mm:ss} %-5level %logger{36} - %msg%n")
+    encoder.setPattern("%d{HH:mm:ss} %-5level - %msg%n")
     encoder.start()
 
     // OutputStreamAppender

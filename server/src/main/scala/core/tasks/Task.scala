@@ -2,8 +2,9 @@ package core.tasks
 
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
-import core.config.FsbtProject
+import core.config.FsbtModule
 
 trait Task {
-  def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit
+  def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit
+
 }

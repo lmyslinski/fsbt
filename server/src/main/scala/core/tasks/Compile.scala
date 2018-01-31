@@ -6,8 +6,8 @@ import com.martiansoftware.nailgun.NGContext
 import compiler.ZincCompiler
 import core.FsbtUtil
 import core.cache.FsbtCache
-import core.config.FsbtProject
-import core.dependencies.{DependencyDownloader, MavenDependencyScope}
+import core.config.FsbtModule
+import core.dependencies.{DependencyDownloader, DependencyResolver, MavenDependencyScope}
 import util.LazyNailLogging
 import xsbti.compile.CompileResult
 
@@ -15,15 +15,22 @@ import scala.util.matching.Regex
 
 class Compile extends Task with LazyNailLogging {
 
-  override def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit = {
-
-    val compileResults = config.modules.map(compileModule)
-    val cr = compileModule(config)
-
-    logger.debug("Compile task complete")
+  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+    compileModule(module)
+    moduleTaskCompleted.apply(module)
   }
 
-  private def getDependencies(config: FsbtProject) =
+  def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
+
+//    val cr = compileModule(config)
+
+//    val projects: Set[FsbtModule] = ExecutionHelper.stage2(config)
+
+
+//    logger.debug("Compile task complete")
+  }
+
+  private def getDependencies(config: FsbtModule) =
     config.dependencies
       .filter(x => x.scope == MavenDependencyScope.Test || x.scope == MavenDependencyScope.Compile)
 //      .foldRight("")((dep, res) =>
@@ -32,7 +39,11 @@ class Compile extends Task with LazyNailLogging {
 //          res) + "."
 
 
-  def compileModule(config: FsbtProject)(implicit logger: Logger): Option[CompileResult] = {
+  def compileModule(config: FsbtModule)(implicit logger: Logger): Option[CompileResult] = {
+
+//    val compileResults = config.modules.map(compileModule)
+
+    DependencyResolver.resolveAll(config.dependencies)
     DependencyDownloader.resolveAll(config.dependencies)
     config.target.createIfNotExists(asDirectory = true)
 //    logger.debug(s"Compiling ${config.projectName}...")
@@ -46,11 +57,15 @@ class Compile extends Task with LazyNailLogging {
 //      }
 
       val classPath =
-        ((config.target.toJava ::
-          getDependencies(config).map(_.jarFile.toJava)) :::
-          config.modules.map(_.target.toJava)).toArray
+        (config.target.toJava ::
+          getDependencies(config).map(_.jarFile.toJava)).toArray
+
+      logger.debug(classPath.toString)
+      logger.debug(sourceFiles.toString)
+      logger.debug(config.toString)
 
       try {
+
         Compile.cp.compile(classPath, sourceFiles, config)
       } catch {
         case ex: Exception =>
@@ -68,6 +83,9 @@ class Compile extends Task with LazyNailLogging {
 
     getScalaSourceFiles ++ getJavaSourceFiles
   }
+
+
+
 }
 
 object Compile {

@@ -7,7 +7,7 @@ import java.util.function.{Supplier, Function => JFunction}
 
 import ch.qos.logback.classic.Logger
 import core.cache.FsbtCache
-import core.config.FsbtProject
+import core.config.FsbtModule
 import sbt.internal.inc.javac.{JavaCompiler, JavaTools, Javadoc}
 import sbt.internal.inc.{AnalyzingCompiler, ZincUtil}
 import xsbti._
@@ -36,7 +36,7 @@ class ZincCompiler {
   def setup(implicit logger: Logger): Setup = Setup.create(
     getPerClasspathEntryLookup,
     false,
-    new File(FsbtProject.zincCache),
+    new File(FsbtModule.zincCache),
     CompilerCache.fresh,
     IncOptions.create(),
     reporter,
@@ -46,7 +46,7 @@ class ZincCompiler {
   def compilers(implicit logger: Logger): Compilers = Compilers.create(compiler, javaTools)
   lazy val cp: IncrementalCompiler = ZincCompilerUtil.defaultIncrementalCompiler()
 
-  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtProject)(implicit logger: Logger): Option[CompileResult] = {
+  def compile(classPath: Array[File], sourceFiles: Array[File], config: FsbtModule)(implicit logger: Logger): Option[CompileResult] = {
 
     val previousResult = FsbtCache.getCompileResult(config)
 

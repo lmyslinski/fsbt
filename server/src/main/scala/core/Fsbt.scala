@@ -3,6 +3,7 @@ package core
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import core.config._
+import core.config.compile.CompileConfig
 import core.tasks._
 import util.LazyNailLogging
 
@@ -35,7 +36,20 @@ object Fsbt extends LazyNailLogging {
         List()
     }
 
-    val config = ConfigBuilder.build(context)
-    tasks.foreach(_.perform(config))
+//    try{
+      val modules = ConfigBuilder.buildModules(context)
+      val executionConfig = CompileConfig.build(modules)
+      val executor = new TaskExecutor(modules, executionConfig, new Compile())
+
+      executor.execute()
+
+
+//      executionConfig.foreach(x => println(s"${x.self} waits for ${x.waitFor} and notifies ${x.notifyOnComplete}"))
+
+//      tasks.foreach(_.perform(config))
+//    }catch{
+//      case ex: Throwable => logger.error(ex.getMessage)
+//    }
+
   }
 }

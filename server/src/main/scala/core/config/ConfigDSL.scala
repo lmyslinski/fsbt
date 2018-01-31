@@ -13,6 +13,7 @@ object ConfigDSL extends JavaTokenParsers {
   sealed trait ValueOrVarCall
   case class Dependency(group: ValueOrVarCall, artifact: ValueOrVarCall, version: ValueOrVarCall, withScalaVersion: String, scope: Option[ValueOrVarCall])
   case class DependencyList(deps: List[Dependency])
+  case class DependentModules(modules: List[String])
   case class Modules(moduleList: List[String])
   case class Variable(key: String, value: String)
   case class VarCall(name: String) extends ValueOrVarCall
@@ -29,7 +30,7 @@ object ConfigDSL extends JavaTokenParsers {
   // DSL parser
   private def configuration = rep(expression)
 
-  private def expression = variable | dependencies | module
+  private def expression = variable | dependencies | module | dependsOn
 
   private def variable = stringVariable | intVariable | doubleVariable
 
@@ -46,6 +47,8 @@ object ConfigDSL extends JavaTokenParsers {
   private def variableOrLiteral = variableCall | literal
 
   private def dependencies = "dependencies" ~ "=" ~ "{" ~ repsep(dependency, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => DependencyList(d) }
+
+  private def dependsOn = "depends_on" ~ "=" ~ "{" ~ repsep(stringLiteral, ",") ~ "}" ^^ { case (a ~ b ~ c ~ d ~ e) => DependentModules(d) }
 
   private def dependency =
     variableOrLiteral ~ ("%%" | "%") ~ variableOrLiteral ~ "%" ~ variableOrLiteral ~ opt("%" ~ variableOrLiteral) ^^ { case (group ~ scalaVer ~ artifact ~ sep ~ version ~ scope0) =>

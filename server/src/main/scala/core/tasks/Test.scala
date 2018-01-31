@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.FsbtUtil
-import core.config.{Environment, FsbtProject}
+import core.config.{Environment, FsbtModule}
 
 import scala.concurrent.{Await, Future}
 import scala.sys.process._
@@ -18,7 +18,7 @@ class Test extends Task {
   def specsRegex = "".r
   def TestRegex = "".r
 
-  def getClasspath(config: FsbtProject) =
+  def getClasspath(config: FsbtModule) =
     config.dependencies
       .foldRight("")((dep, res) =>
         dep.jarFile.path.toAbsolutePath.toString +
@@ -26,16 +26,16 @@ class Test extends Task {
           res) + "."
 
   // TODO fix concurrent testing - weird future execution on subsequent runs
-  override def perform(config: FsbtProject)(implicit ctx: NGContext, logger: Logger): Unit = {
+  def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
 //    logger.debug(config.modules.length.toString)
 //    val future = config.modules.map(x => Future(testModule(x)))
 //    val f = Await.result(Future.sequence(future), Duration.Inf)
 //    testModule(config)
-    config.modules.map(testModule)
+//    config.modules.map(testModule)
     testModule(config)
   }
 
-  def testModule(config: FsbtProject)(implicit logger: Logger): Int = {
+  def testModule(config: FsbtModule)(implicit logger: Logger): Int = {
     logger.debug(s"Starting test of ${config.target}")
     try{
       val classPath = getClasspath(config)
@@ -52,6 +52,11 @@ class Test extends Task {
       case ex: Exception => logger.debug("FUCK", ex)
         1
     }
+  }
+
+  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit =
+  {
+
   }
 }
 

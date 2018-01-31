@@ -7,4 +7,5 @@ import core.config.FsbtModule
 trait Task {
   def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit
 
+
 }

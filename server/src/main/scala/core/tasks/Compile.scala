@@ -16,60 +16,38 @@ import scala.util.matching.Regex
 class Compile extends Task with LazyNailLogging {
 
   override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+    println(s"Performing with ${module.projectName}")
     compileModule(module)
     moduleTaskCompleted.apply(module)
-  }
-
-  def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
-
-//    val cr = compileModule(config)
-
-//    val projects: Set[FsbtModule] = ExecutionHelper.stage2(config)
-
-
-//    logger.debug("Compile task complete")
   }
 
   private def getDependencies(config: FsbtModule) =
     config.dependencies
       .filter(x => x.scope == MavenDependencyScope.Test || x.scope == MavenDependencyScope.Compile)
-//      .foldRight("")((dep, res) =>
-//        dep.jarFile.path.toAbsolutePath.toString +
-//          Environment.pathSeparator(config.environment) +
-//          res) + "."
 
 
   def compileModule(config: FsbtModule)(implicit logger: Logger): Option[CompileResult] = {
 
-//    val compileResults = config.modules.map(compileModule)
-
-    DependencyResolver.resolveAll(config.dependencies)
-    DependencyDownloader.resolveAll(config.dependencies)
+    val deps = DependencyResolver.resolveAll(config.dependencies)
+    DependencyDownloader.resolveAll(deps)
     config.target.createIfNotExists(asDirectory = true)
-//    logger.debug(s"Compiling ${config.projectName}...")
+
+    val configCopy = config.copy(dependencies = deps)
 
 
-    val srcRoot = File(config.workingDir + "/src")
+    val srcRoot = File(configCopy.workingDir + "/src")
     if (srcRoot.exists) {
       val sourceFiles = getSourceFiles(srcRoot.pathAsString).map(_.toJava).toArray
-//      for (source <- sourceFiles) {
-//        logger.debug(s"Source: ${source.toPath}")
-//      }
 
       val classPath =
-        (config.target.toJava ::
-          getDependencies(config).map(_.jarFile.toJava)).toArray
-
-      logger.debug(classPath.toString)
-      logger.debug(sourceFiles.toString)
-      logger.debug(config.toString)
+        (configCopy.target.toJava ::
+          getDependencies(configCopy).map(_.jarFile.toJava)).toArray
 
       try {
 
-        Compile.cp.compile(classPath, sourceFiles, config)
+        Compile.cp.compile(classPath, sourceFiles, configCopy)
       } catch {
         case ex: Exception =>
-//          logger.debug("Compilation failed:", ex)
           None
       }
     }else{
@@ -83,8 +61,6 @@ class Compile extends Task with LazyNailLogging {
 
     getScalaSourceFiles ++ getJavaSourceFiles
   }
-
-
 
 }
 

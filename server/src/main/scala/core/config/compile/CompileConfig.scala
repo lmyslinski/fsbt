@@ -30,8 +30,8 @@ object CompileConfig {
     modules.map(module =>
       ExecutionConfig(
         module.projectName,
-        modulesDeps.filter(_._1 == module.projectName).map(_._2),
-        dependsOn.filter(_._1 == module.projectName).map(_._2))
+        dependsOn.filter(_._1 == module.projectName).map(_._2),
+        modulesDeps.filter(_._1 == module.projectName).map(_._2))
     )
   }
 }

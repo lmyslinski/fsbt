@@ -11,26 +11,29 @@ class TaskExecutor(val modules: List[FsbtModule], val configs: List[ExecutionCon
   var notifs = modules.map(x => (x.projectName, List[FsbtProjectRef]())).toMap
   var started = List[FsbtProjectRef]()
 
-  def execute() = {
+  def execute(): Unit = {
 
-    val notStarted = configs.filterNot(x => started.contains(x.self))
+      val readyToStart = configs
+        .filterNot(x => started.contains(x.self))
+        .filter(p => {notifs(p.self).toSet == p.waitFor.toSet})
 
-    val readyToStart = notStarted.filter(p => {
-      notifs(p.self) == p.waitFor
-    })
-
-    readyToStart.par.foreach(x => {
-      this.synchronized {
-        started = started :+ x.self
-      }
-      val self = modules.filter(_.projectName == x.self).head
-      task.perform(self, taskCompleted)
-    })
+      readyToStart.par.foreach(x => {
+        this.synchronized{
+          started = started :+ x.self
+        }
+        val self = modules.filter(_.projectName == x.self).head
+        task.perform(self, taskCompleted)
+      })
   }
 
-  def taskCompleted(module: FsbtModule) = {
-    this.synchronized {
-      notifs = notifs.updated(module.projectName, notifs(module.projectName) :+ module.projectName)
-    }
+  def taskCompleted(module: FsbtModule): Unit = {
+//    this.synchronized {
+      configs.filter(_.self == module.projectName).head.notifyOnComplete.foreach{ projectToNotify =>
+        notifs = notifs.updated(projectToNotify, notifs(projectToNotify) :+ module.projectName)
+        println(s"Notified $projectToNotify of ${module.projectName} completion")
+      }
+
+//    }
+    execute()
   }
 }

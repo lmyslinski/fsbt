@@ -24,7 +24,7 @@ object DependencyResolver {
   private val pomVariableRegex = """\$\{(.*)\}""".r
 
   def resolveAll(dependencies: List[MavenDependency])(implicit logger: Logger): List[MavenDependency] = {
-    logger.debug("Resolving dependencies...")
+//    logger.debug("Resolving dependencies...")
     val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
     val c = b.map{
@@ -32,7 +32,7 @@ object DependencyResolver {
         val winner = deps.reduce(max)
         winner.copyWith(version = winner.version)
     }.toList
-    logger.debug("All dependencies resolved")
+//    logger.debug("All dependencies resolved")
     c
   }
 

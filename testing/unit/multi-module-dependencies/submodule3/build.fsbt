@@ -1,3 +1,5 @@
 dependencies = {
     "com.google.guava" % "guava" % "22.0"
 }
+
+depends_on = { "submodule1", "submodule2" }

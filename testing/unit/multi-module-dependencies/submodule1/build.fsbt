@@ -1,5 +1,3 @@
 dependencies = {
     "com.google.guava" % "guava" % "23.0"
 }
-
-depends_on = { "submodule2" }

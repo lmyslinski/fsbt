@@ -7,6 +7,7 @@ import compiler.ZincCompiler
 import core.FsbtUtil
 import core.cache.FsbtCache
 import core.config.FsbtModule
+import core.config.compile.ExecutionConfig
 import core.dependencies.{DependencyDownloader, DependencyResolver, MavenDependencyScope}
 import util.LazyNailLogging
 import xsbti.compile.CompileResult
@@ -61,7 +62,6 @@ class Compile extends Task with LazyNailLogging {
 
     getScalaSourceFiles ++ getJavaSourceFiles
   }
-
 }
 
 object Compile {

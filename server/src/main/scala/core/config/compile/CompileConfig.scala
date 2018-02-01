@@ -17,7 +17,7 @@ object CompileConfig {
       case (module, y) => y.map(xx => (xx, module.projectName))
     }
     val b = modules.map(x => (x.dependsOn, x)).flatMap {
-      case (y, module) => y.map(xx => (module.projectName, xx))
+      case (y, module) => y.map(xx => (xx, module.projectName))
     }
     a ::: b
   }
@@ -30,8 +30,8 @@ object CompileConfig {
     modules.map(module =>
       ExecutionConfig(
         module.projectName,
-        dependsOn.filter(_._1 == module.projectName).map(_._2),
-        modulesDeps.filter(_._1 == module.projectName).map(_._2))
+        modulesDeps.filter(_._1 == module.projectName).map(_._2),
+        dependsOn.filter(_._1 == module.projectName).map(_._2))
     )
   }
 }

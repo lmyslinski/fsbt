@@ -1,7 +1,9 @@
-package core.tasks
+package core.execution.tasks
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import core.config.FsbtModule
+import core.config.compile.ExecutionConfig
+import core.execution.Task
 
 class Stop extends Task {
   def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
@@ -9,7 +11,7 @@ class Stop extends Task {
     logger.debug("fsbt server stopped")
   }
 
-  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+  override def perform(module: FsbtModule,config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
 
   }
 }

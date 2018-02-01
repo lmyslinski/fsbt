@@ -1,4 +1,4 @@
-package core.tasks
+package core.execution.tasks
 
 import java.io.PrintWriter
 
@@ -8,6 +8,8 @@ import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.FsbtUtil
 import core.config.FsbtModule
+import core.config.compile.ExecutionConfig
+import core.execution.Task
 import org.slf4j.Logger
 
 import scala.sys.process.Process
@@ -36,7 +38,7 @@ class JarPackage extends Task with LazyLogging{
 
   }
 
-  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: classic.Logger): Unit = {
+  override def perform(module: FsbtModule,config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: classic.Logger): Unit = {
 
   }
 }

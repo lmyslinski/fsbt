@@ -4,7 +4,8 @@ import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import core.config._
 import core.config.compile.CompileConfig
-import core.tasks._
+import core.execution.{ExecutionHelper, TaskExecutor}
+import core.execution.tasks._
 import util.LazyNailLogging
 
 
@@ -37,8 +38,8 @@ object Fsbt extends LazyNailLogging {
     }
 
 //    try{
-      val modules = ConfigBuilder.buildModules(context)
-      val executionConfig = CompileConfig.build(modules)
+      val modules = ModuleBuilder.buildModules(context)
+      val executionConfig = ExecutionHelper.build(modules)
       val executor = new TaskExecutor(modules, executionConfig, new Compile())
 
       executor.execute()

@@ -15,7 +15,7 @@ import core.config.FsbtExceptions.{ConfigFileValidationException, ModuleNotFound
 import scala.annotation.tailrec
 import scala.util.{Failure, Success}
 
-object ConfigBuilder{
+object ModuleBuilder{
 
   def build(workDir: String)(implicit logger: Logger): List[FsbtModule] = stage0(workDir, System.out)
 

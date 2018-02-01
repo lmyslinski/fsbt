@@ -1,12 +1,14 @@
-package core.tasks
+package core.execution.tasks
 
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import compiler.ScalaLocator
 import context.ContextUtil
 import core.FsbtUtil
+import core.config.compile.ExecutionConfig
 import core.config.{Environment, FsbtModule}
 import core.dependencies.MavenDependencyScope
+import core.execution.Task
 
 import scala.sys.process._
 import scala.util.matching.Regex
@@ -49,7 +51,7 @@ class Run extends Task {
     packageString.replace('/', '.')
   }
 
-  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+  override def perform(module: FsbtModule,config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
 
   }
 }

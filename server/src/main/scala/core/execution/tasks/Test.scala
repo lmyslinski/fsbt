@@ -1,10 +1,12 @@
-package core.tasks
+package core.execution.tasks
 
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import com.typesafe.scalalogging.LazyLogging
 import core.FsbtUtil
+import core.config.compile.ExecutionConfig
 import core.config.{Environment, FsbtModule}
+import core.execution.Task
 
 import scala.concurrent.{Await, Future}
 import scala.sys.process._
@@ -54,7 +56,7 @@ class Test extends Task {
     }
   }
 
-  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit =
+  override def perform(module: FsbtModule,config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit =
   {
 
   }

@@ -1,4 +1,4 @@
-package core.tasks
+package core.execution.tasks
 
 import better.files.File
 import ch.qos.logback.classic.Logger
@@ -9,6 +9,7 @@ import core.cache.FsbtCache
 import core.config.FsbtModule
 import core.config.compile.ExecutionConfig
 import core.dependencies.{DependencyDownloader, DependencyResolver, MavenDependencyScope}
+import core.execution.Task
 import util.LazyNailLogging
 import xsbti.compile.CompileResult
 
@@ -16,7 +17,7 @@ import scala.util.matching.Regex
 
 class Compile extends Task with LazyNailLogging {
 
-  override def perform(module: FsbtModule, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+  override def perform(module: FsbtModule, config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
     println(s"Performing with ${module.projectName}")
     compileModule(module)
     moduleTaskCompleted.apply(module)
@@ -35,15 +36,11 @@ class Compile extends Task with LazyNailLogging {
 
     val configCopy = config.copy(dependencies = deps)
 
-
     val srcRoot = File(configCopy.workingDir + "/src")
     if (srcRoot.exists) {
       val sourceFiles = getSourceFiles(srcRoot.pathAsString).map(_.toJava).toArray
 
-      val classPath =
-        (configCopy.target.toJava ::
-          getDependencies(configCopy).map(_.jarFile.toJava)).toArray
-
+      val classPath = (configCopy.target.toJava :: getDependencies(configCopy).map(_.jarFile.toJava)).toArray
       try {
 
         Compile.cp.compile(classPath, sourceFiles, configCopy)

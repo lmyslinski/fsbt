@@ -7,10 +7,8 @@ import core.execution.Classpath
 
 import scala.collection.immutable.Nil
 
-case class ExecutionConfig(module: FsbtProjectRef, classpath: Classpath, notifyOnComplete: List[FsbtProjectRef], waitFor: List[FsbtProjectRef])
-
-
-object CompileConfig {
-
-
-}
+case class ExecutionConfig
+(module: FsbtProjectRef,
+ classpath: Classpath,
+ notifyOnComplete: List[FsbtProjectRef],
+ waitFor: List[FsbtProjectRef])

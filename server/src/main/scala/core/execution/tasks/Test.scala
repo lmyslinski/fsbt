@@ -15,7 +15,7 @@ import scala.util.matching.Regex
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class Test extends Task {
+case class Test() extends Task {
 
   def specsRegex = "".r
   def TestRegex = "".r

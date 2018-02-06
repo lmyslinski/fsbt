@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory
 
 object LoggerUtil {
 
-  def getAppender(out: PrintStream) = {
+  val moduleLogFormat = "%d{HH:mm:ss} %-5level - %msg%n"
+
+  def getAppender(out: PrintStream): OutputStreamAppender[ILoggingEvent] = {
     val context = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
 
     // Encoder

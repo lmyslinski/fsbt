@@ -7,6 +7,7 @@ import core.config.compile.ExecutionConfig
 import core.dependencies.MavenDependencyScope
 
 import scala.collection.immutable.Nil
+import scala.tools.nsc.util.ClassPath
 
 object ExecutionHelper {
 
@@ -57,15 +58,7 @@ object ExecutionHelper {
 
     val nested = getNestedDependencies(List(module.projectName)).map(getModule)
 
-    val compile =
-      module.target.toJava :: getDependencies(module, MavenDependencyScope.Compile) :::
-        nested.flatMap(x => x.target.toJava :: getDependencies(x, MavenDependencyScope.Compile))
-
-    val test =
-      module.target.toJava :: getDependencies(module, MavenDependencyScope.Test) :::
-        nested.flatMap(x => x.target.toJava :: getDependencies(x, MavenDependencyScope.Test))
-
-    Classpath(compile.toArray, test.toArray)
+    new Classpath(module.target.toJava :: nested.map(_.target.toJava), module.dependencies ::: nested.flatMap(_.dependencies))
   }
 
   def build(modules: List[FsbtModule]): List[ExecutionConfig] = {

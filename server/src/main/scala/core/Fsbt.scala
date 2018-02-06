@@ -3,8 +3,7 @@ package core
 import ch.qos.logback.classic.Logger
 import com.martiansoftware.nailgun.NGContext
 import core.config._
-import core.config.compile.CompileConfig
-import core.execution.{ExecutionHelper, TaskExecutor}
+import core.execution.{ExecutionHelper, Task, TaskExecutor}
 import core.execution.tasks._
 import util.LazyNailLogging
 
@@ -25,32 +24,24 @@ object Fsbt extends LazyNailLogging {
       context.getNGServer.shutdown(true)
     }
 
-    val tasks = args.flatMap {
-      case "stop" => List(new Stop())
-      case "compile" => List(new Compile())
-      case "test" => List(new Compile(), new Test())
-      case "run" => List(new Compile, new Run())
-      case "package" => List(new Compile(), new Test(), new JarPackage())
-      case "clean" => List(new Clean())
+    val tasks: List[Task] = args.flatMap {
+      case "stop" => List(Stop())
+      case "compile" => List(Compile())
+      case "test" => List(Compile(), Test())
+      case "run" => List(Compile(), Run())
+      case "package" => List(Compile(), Test(), JarPackage())
+      case "clean" => List(Clean())
       case unknown =>
         context.out.println(s"Command not found: $unknown")
         List()
     }
 
-//    try{
+    try{
       val modules = ModuleBuilder.buildModules(context)
       val executionConfig = ExecutionHelper.build(modules)
-      val executor = new TaskExecutor(modules, executionConfig, new Compile())
-
-      executor.execute()
-
-
-//      executionConfig.foreach(x => println(s"${x.self} waits for ${x.waitFor} and notifies ${x.notifyOnComplete}"))
-
-//      tasks.foreach(_.perform(config))
-//    }catch{
-//      case ex: Throwable => logger.error(ex.getMessage)
-//    }
-
+      tasks.foreach(new TaskExecutor(modules, executionConfig, _).execute())
+    }catch{
+      case ex: Throwable => logger.error(ex.getMessage)
+    }
   }
 }

@@ -8,44 +8,37 @@ import core.FsbtUtil
 import core.cache.FsbtCache
 import core.config.FsbtModule
 import core.config.compile.ExecutionConfig
-import core.dependencies.{DependencyDownloader, DependencyResolver, MavenDependencyScope}
+import core.dependencies.{DependencyDownloader, DependencyResolver}
 import core.execution.Task
 import util.LazyNailLogging
-import xsbti.compile.CompileResult
 
 import scala.util.matching.Regex
 
-class Compile extends Task with LazyNailLogging {
+case class Compile() extends Task with LazyNailLogging {
 
-  override def perform(module: FsbtModule, config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
-    println(s"Performing with ${module.projectName}")
-    compileModule(module)
+  override def perform(module: FsbtModule, config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, ļlogger: Logger): Unit = {
+    compileModule(module, config)
     moduleTaskCompleted.apply(module)
   }
 
-  private def getDependencies(config: FsbtModule) =
-    config.dependencies
-      .filter(x => x.scope == MavenDependencyScope.Test || x.scope == MavenDependencyScope.Compile)
+  def compileModule(module: FsbtModule, config: ExecutionConfig)(implicit logger: Logger): Unit = {
 
-
-  def compileModule(config: FsbtModule)(implicit logger: Logger): Option[CompileResult] = {
-
-    val deps = DependencyResolver.resolveAll(config.dependencies)
+    val deps = DependencyResolver.resolveAll(config.classpath.dependencies)
     DependencyDownloader.resolveAll(deps)
-    config.target.createIfNotExists(asDirectory = true)
+    module.target.createIfNotExists(asDirectory = true)
 
-    val configCopy = config.copy(dependencies = deps)
+    logger.info(s"[${module.projectName}] Compiling")
 
-    val srcRoot = File(configCopy.workingDir + "/src")
+    val srcRoot = File(module.workingDir + "/src")
     if (srcRoot.exists) {
       val sourceFiles = getSourceFiles(srcRoot.pathAsString).map(_.toJava).toArray
 
-      val classPath = (configCopy.target.toJava :: getDependencies(configCopy).map(_.jarFile.toJava)).toArray
+      val classPath = (module.target.toJava :: deps.map(_.jarFile.toJava) ::: config.classpath.targets).toArray
       try {
-
-        Compile.cp.compile(classPath, sourceFiles, configCopy)
+        Compile.cp.compile(classPath, sourceFiles, module)
+        logger.info(s"[${module.projectName}] Compiling")
       } catch {
-        case ex: Exception =>
+        case _: Exception =>
           None
       }
     }else{

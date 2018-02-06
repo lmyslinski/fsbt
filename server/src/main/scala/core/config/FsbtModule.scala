@@ -40,6 +40,7 @@ object FsbtModule {
   val scalaVersion = "_2.12"
   type Variables = Map[String, String]
   type FsbtProjectRef = String
+  type FsbtProjectName = String
 }
 
 

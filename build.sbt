@@ -21,4 +21,6 @@ bashScriptExtraDefines ++= IO.readLines(baseDirectory.value / "scripts" / "extra
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DebianPlugin)
+enablePlugins(UniversalPlugin)
+
 

@@ -5,7 +5,7 @@ import core.config.FsbtModule
 import core.config.compile.ExecutionConfig
 import core.execution.Task
 
-class Stop extends Task {
+case class Stop() extends Task {
   def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
     ctx.getNGServer.shutdown(true)
     logger.debug("fsbt server stopped")
@@ -14,8 +14,4 @@ class Stop extends Task {
   override def perform(module: FsbtModule,config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
 
   }
-}
-
-object Stop{
-
 }

@@ -76,12 +76,12 @@ run() {
     if [ $isRunning -eq $! ];
     then
     echo "fsbt server started at port 1234"
-        ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
+        ng --nailgun-port $port core.Fsbt "${residual_args[@]}"
     else
         echo "Failed to start fsbt"
     fi
   else
-    ng-nailgun --nailgun-port $port core.Fsbt "${residual_args[@]}"
+    ng --nailgun-port $port core.Fsbt "${residual_args[@]}"
   fi
 
 }

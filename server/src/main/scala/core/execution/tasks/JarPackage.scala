@@ -15,7 +15,7 @@ import org.slf4j.Logger
 import scala.sys.process.Process
 import scala.util.matching.Regex
 
-class JarPackage extends Task with LazyLogging{
+case class JarPackage() extends Task with LazyLogging{
   def perform(config: FsbtModule)(implicit ctx: NGContext, logger: classic.Logger): Unit = {
     logger.debug(s"Packaging ${config.projectName}...")
     val mf = File(config.target.toString() + "/META-INF/MANIFEST.MF")

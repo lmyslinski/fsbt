@@ -10,31 +10,23 @@ import core.execution.Task
 
 import scala.annotation.tailrec
 
-class Clean extends Task with LazyLogging{
-//  override def perform(config: FsbtModule)(implicit ctx: NGContext, logger: Logger): Unit = {
+case class Clean() extends Task with LazyLogging{
 
-//    def flatten(config: FsbtModule): List[File] = {
-//      config.target :: config.modules.flatMap(flatten)
-//    }
-
-    @tailrec
-    private def clean(modules: List[File]): Unit = {
-      modules match{
-        case head::tail =>
-          for (file <- head.list) {
-            file.delete()
-            logger.debug(s"Deleted ${file.path}")
-          }
-          clean(tail)
-        case Nil => ()
-      }
-    }
-
-
-//    if(config.target.exists){
-//      clean(config)
-//    }
   override def perform(module: FsbtModule, config: ExecutionConfig, moduleTaskCompleted: FsbtModule => Unit)(implicit ctx: NGContext, logger: Logger): Unit = {
+    clean(List(module.target))
+  }
 
-}
+
+  @tailrec
+  private def clean(modules: List[File]): Unit = {
+    modules match{
+      case head::tail =>
+        for (file <- head.list) {
+          file.delete()
+          logger.debug(s"Deleted ${file.path}")
+        }
+        clean(tail)
+      case Nil => ()
+    }
+  }
 }

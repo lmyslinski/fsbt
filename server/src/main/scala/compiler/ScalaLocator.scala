@@ -14,7 +14,7 @@ object ScalaLocator {
       sbt.internal.inc.classpath.ClasspathUtilities.rootLoader
     )
 
-  val scalaHome = sys.env("SCALA_HOME")
+  val scalaHome = sys.env.getOrElse("SCALA_HOME", "")
 
   def scalaInstance = {
     val libJar = getJar("scala-library")

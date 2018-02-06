@@ -1,6 +1,3 @@
-//maintainer := "Humblehound <lukmyslinski@gmail.com>"
-//packageSummary := "fsbt Debian Package"
-
 libraryDependencies ++=
   Seq(
     "org.scala-sbt" %% "zinc" % "1.0.0",
@@ -22,6 +19,3 @@ libraryDependencies ++=
   )
 
 mainClass in Compile := Some("com.martiansoftware.nailgun.NGServer")
-
-//enablePlugins(JavaAppPackaging)
-//enablePlugins(DebianPlugin)

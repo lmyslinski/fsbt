@@ -23,7 +23,7 @@ class MavenDependency(
   val logger = Logger(LoggerFactory.getLogger(this.getClass))
   val pomFile = File(s"${FsbtModule.fsbtCache}/$groupId/$artifactId/$version/pom.xml")
   val jarFile = File(s"${FsbtModule.fsbtCache}/$groupId/$artifactId/$version/$artifactId.jar")
-  val descriptor = s"$withScalaVersion $groupId/$artifactId/$version"
+  val descriptor = s"$groupId/$artifactId/$version"
 
   val baseUri: String = {
 
@@ -47,6 +47,8 @@ class MavenDependency(
       otherDep.groupId.equals(groupId) &&
       otherDep.version.equals(version)
   }
+
+
 }
 
 object MavenDependency {

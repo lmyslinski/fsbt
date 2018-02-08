@@ -34,13 +34,9 @@ case class Compile() extends Task with LazyNailLogging {
       val sourceFiles = getSourceFiles(srcRoot.pathAsString).map(_.toJava).toArray
 
       val classPath = (module.target.toJava :: deps.map(_.jarFile.toJava) ::: config.classpath.targets).toArray
-      try {
         Compile.cp.compile(classPath, sourceFiles, module)
-        logger.info(s"[${module.projectName}] Compiling")
-      } catch {
-        case _: Exception =>
-          None
-      }
+        logger.info(s"[${module.projectName}] compilation completed")
+
     }else{
       None
     }

@@ -36,12 +36,12 @@ object Fsbt extends LazyNailLogging {
         List()
     }
 
-    try{
+//    try{
       val modules = ModuleBuilder.buildModules(context)
       val executionConfig = ExecutionHelper.build(modules)
       tasks.foreach(new TaskExecutor(modules, executionConfig, _).execute())
-    }catch{
-      case ex: Throwable => logger.error(ex.getMessage)
-    }
+//    }catch{
+//      case ex: Throwable => logger.error("Task failure", ex)
+//    }
   }
 }

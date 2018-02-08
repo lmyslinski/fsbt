@@ -42,8 +42,7 @@ class ZincCompiler {
     override def debug(msg: Supplier[String]): Unit = ()
 //      logger.debug(msg.get())
 
-    override def error(msg: Supplier[String]): Unit = ()
-//    logger.error(msg.get())
+    override def error(msg: Supplier[String]): Unit = logger.error(s"[$moduleName] ${msg.get}")
 
     override def warn(msg: Supplier[String]): Unit = ()
 //      logger.warn(msg.get())
@@ -79,16 +78,17 @@ class ZincCompiler {
         .withSources(sourceFiles),
       setup,
       previousResult)
-    try{
+//    try{
+      val sourceString = sourceFiles.foldLeft("")((x, y) => s"$x ${y.getPath}")
       val cr = cp.compile(inputs, zincLogger(config.projectName))
        if (cr.hasModified) {
          FsbtCache.updateCache(config, cr)
        }
       Some(cr)
-    }catch{
-      case ex: Exception => logger.debug("FKC", ex)
-      None
-    }
+//    }catch{
+//      case ex: Exception => logger.debug("FKC", ex)
+//      None
+//    }
 
 
   }
@@ -96,7 +96,7 @@ class ZincCompiler {
   private def getPerClasspathEntryLookup(implicit logger: Logger) = new PerClasspathEntryLookup {
 
     override def definesClass(classpathEntry: File): DefinesClass = (className: String) => {
-      logger.debug(s"checking $className on classpath")
+//      logger.debug(s"checking $className on classpath")
       true
     }
 

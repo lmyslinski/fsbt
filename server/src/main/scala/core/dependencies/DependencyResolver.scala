@@ -9,6 +9,7 @@ import ch.qos.logback.classic.Logger
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Seq
+import scala.util.matching.Regex
 import scala.xml.{Elem, NodeSeq, XML}
 
 // first, download pom and jar for each dependency
@@ -21,10 +22,9 @@ import scala.xml.{Elem, NodeSeq, XML}
 // also, add parent pom support (FML)
 object DependencyResolver {
 
-  private val pomVariableRegex = """\$\{(.*)\}""".r
+  private val pomVariableRegex: Regex = """\$\{(.*)\}""".r
 
   def resolveAll(dependencies: List[MavenDependency])(implicit logger: Logger): List[MavenDependency] = {
-//    logger.debug("Resolving dependencies...")
     val a = dependencies.flatMap(dependency => resolveRecursive(dependency)) ::: dependencies
     val b = a.groupBy(f => (f.groupId, f.artifactId))
     val c = b.map{
@@ -32,120 +32,121 @@ object DependencyResolver {
         val winner = deps.reduce(max)
         winner.copyWith(version = winner.version)
     }.toList
-//    logger.debug("All dependencies resolved")
     c
   }
 
   private def max(s1: MavenDependency, s2: MavenDependency): MavenDependency = if (s1.version > s2.version) s1 else s2
 
 
-  private def resolveVariables(depMgmtParent: Seq[MavenDependency], ppropmap: Map[String, String]): Seq[MavenDependency] = {
-    depMgmtParent.map { dependency =>
-      val version = dependency.version match {
-        case pomVariableRegex(variable) => ppropmap(variable)
-        case _ => dependency.version
-      }
-      val groupId = dependency.groupId match {
-        case pomVariableRegex(variable) => ppropmap(variable)
-        case _ => dependency.groupId
-      }
-      val artifactId = dependency.artifactId match {
-        case pomVariableRegex(variable) => ppropmap(variable)
-        case _ => dependency.artifactId
-      }
-      dependency.copyWith(groupId, artifactId, version)
-    }
-  }
+  private def resolveVariables(dependencies: List[MavenDependency], propertyMap: Map[String, String]): List[MavenDependency] = {
 
-  private def resolveVariablesWithParent(dependencies: Seq[MavenDependency], ownpropmap: Map[String, String],
-                                 parentPropertyMap: Map[String, String]): Seq[MavenDependency] = {
     dependencies.map { dependency =>
       val version = dependency.version match {
-        case pomVariableRegex(variable) => if (ownpropmap.contains(variable)) ownpropmap(variable) else parentPropertyMap(variable)
+        case pomVariableRegex(variable) => propertyMap(variable)
         case _ => dependency.version
       }
       val groupId = dependency.groupId match {
-        case pomVariableRegex(variable) => if (ownpropmap.contains(variable)) ownpropmap(variable) else parentPropertyMap(variable)
+        case pomVariableRegex(variable) => propertyMap(variable)
         case _ => dependency.groupId
       }
       val artifactId = dependency.artifactId match {
-        case pomVariableRegex(variable) => if (ownpropmap.contains(variable)) ownpropmap(variable) else parentPropertyMap(variable)
+        case pomVariableRegex(variable) => propertyMap(variable)
         case _ => dependency.artifactId
       }
       dependency.copyWith(groupId, artifactId, version)
     }
   }
 
-  private def getVersionFromParent(newDeps: Seq[MavenDependency], depMgmtParent: Map[(String, String), String]): Seq[MavenDependency] = {
-    newDeps.map {
-      dependency =>
-        dependency.version match {
-          case "" => dependency.copyWith(dependency.groupId,
-            dependency.artifactId,
-            depMgmtParent(dependency.groupId, dependency.artifactId))
-          case _ => dependency
+  private def updateDependenciesFromDependencyManagement(pomFile: PomFile): PomFile = {
+    if(pomFile.parentPom.isDefined){
+      val dependencyManagement = pomFile.parentPom.get.dependencyManagement
+      val (toUpdate, complete) = pomFile.dependencies.partition(p => p.version.isEmpty || p.scope == MavenDependencyScope.Import)
+      val updated = complete ::: toUpdate.map{x =>
+        if(dependencyManagement.isDefinedAt(x.groupId, x.artifactId)){
+          dependencyManagement((x.groupId, x.artifactId))
+        }else{
+          x
         }
+      }
+      pomFile.copy(dependencies = updated)
+    }else pomFile
+  }
+
+  def getRecursiveProperties(pomFile: PomFile) : Map[String, String] = {
+    if(pomFile.parentPom.isDefined){
+      pomFile.properties ++ getRecursiveProperties(pomFile.parentPom.get)
+    }else{
+      pomFile.properties
     }
   }
+
+  def getRecursiveDepencies(pomFile: PomFile) : List[MavenDependency] = {
+    if(pomFile.parentPom.isDefined){
+      pomFile.dependencies ::: getRecursiveDepencies(pomFile.parentPom.get)
+    }else{
+      pomFile.dependencies
+    }
+  }
+
 
   private def resolveRecursive(dependency: MavenDependency)(implicit logger: Logger): List[MavenDependency] = {
-    val pom = XML.loadFile(getPom(dependency).toJava)
-    val parentPom = getParentPom(pom)
+//    logger.debug(s"Working on $dependency")
+    val pomFileOption = getPom(dependency)
+    if(pomFileOption.isDefined){
+      val pomFile = pomFileOption.get
+      val updatedPom = updateDependenciesFromDependencyManagement(pomFile)
+      val allVariables = getRecursiveProperties(updatedPom)
+      val allDependencies = getRecursiveDepencies(updatedPom)
+      val resolved = resolveVariables(allDependencies, allVariables)
+//      logger.debug(s"$dependency resolved, sending downsteam ${resolved}")
+      resolved ::: resolved.flatMap(resolveRecursive)
+    }else{
+      List()
+    }
 
-    if (parentPom.isDefined) {
-      val parentPropertyMap = getPropertyMap(parentPom.get)
-      val parentDependencies = getParentDependencies(parentPom.get, parentPropertyMap)
-      val dependencies = getDependenciesFromPom(pom)
-      val propertyMap = getPropertyMap(pom)
-      val completeDependencies = getVersionFromParent(resolveVariablesWithParent(dependencies, propertyMap, parentPropertyMap), parentDependencies).toList
-      completeDependencies ::: completeDependencies.flatMap(resolveRecursive)
-    } else {
-      val dependencies = getDependenciesFromPom(pom)
-      val propertyMap = getPropertyMap(pom)
-      val completeDependencies = resolveVariables(dependencies, propertyMap).toList
-      completeDependencies ::: completeDependencies.flatMap(resolveRecursive)
+  }
+
+  private def getParentPom(pom: Elem)(implicit logger: Logger): Option[PomFile] = {
+    val parent = pom \ "parent"
+    if (parent.nonEmpty) getPom(toMavenDependency(parent)) else None
+  }
+
+  private def getPom(dependency: MavenDependency)(implicit logger: Logger): Option[PomFile] = {
+    try{
+      val file = if (!dependency.pomFile.exists) {
+        downloadPom(dependency).toJava
+      }else dependency.pomFile.toJava
+      val pomFile = XML.loadFile(file)
+      val parent = getParentPom(pomFile)
+      val dependencies = getDependenciesFromPom(pomFile)
+      val dependencyManagement = getDependencyManagementFromPom(pomFile)
+      val propertyMap = getPropertyMap(pomFile)
+      Some(PomFile(dependencies, propertyMap, parent, dependencyManagement))
+    }catch {
+      case _: Throwable => {
+//        logger.debug(s"Error, dependency $dependency not found")
+        None
+      }
     }
   }
 
-  private def getParentDependencies(parentPom: Elem, parentPropertyMap: Map[String, String]): Map[(String, String), String] = {
-    val dependencyManagement = getDependencyManagement(parentPom)
-    resolveVariables(dependencyManagement, parentPropertyMap).map {
-      dependency => (dependency.groupId, dependency.artifactId) -> dependency.version
-    }.toMap
-  }
 
-
-  private def getDependenciesFromPom(pom: Elem): Seq[MavenDependency] =
+  private def getDependenciesFromPom(pom: Elem): List[MavenDependency] =
     (pom \ "dependencies" \ "dependency").map(toMavenDependency)
       .filter(_.scope == MavenDependencyScope.Compile)
-      .filter(_.optional == false)
+      .filter(_.optional == false).toList
+
+  private def getDependencyManagementFromPom(pom: Elem): Map[(String, String), MavenDependency] =
+    (pom \ "dependencyManagement" \ "dependencies" \ "dependency")
+      .map(toMavenDependency)
+      .map(p => ((p.groupId, p.artifactId), p)).toMap
 
 
   private def getPropertyMap(pom: Elem): Map[String, String] = {
-
-
-
     ((pom \ "properties" \ "_").map { property => property.label -> property.text }.toMap +
       ("project.artifactId" -> (pom \ "artifactId").text) +
       ("project.groupId" -> (pom \ "groupId").text) +
       ("project.version" -> (pom \ "version").text)).filter(_._2 != "")
-  }
-
-  private def getDependencyManagement(pom: Elem): Seq[MavenDependency] = {
-    val deps = pom \ "dependencyManagement" \ "dependencies" \ "_"
-    deps.map(toMavenDependency)
-  }
-
-  private def getParentPom(pom: Elem)(implicit logger: Logger): Option[Elem] = {
-    val parent = pom \ "parent"
-    if (parent.nonEmpty) Some(XML.loadFile(getPom(toMavenDependency(parent)).toJava)) else None
-  }
-
-  private def getPom(dependency: MavenDependency)(implicit logger: Logger): File = {
-    if (!dependency.pomFile.exists) {
-      downloadPom(dependency)
-    }
-    dependency.pomFile
   }
 
   private def downloadPom(dependency: MavenDependency)(implicit logger: Logger): File = {
@@ -163,7 +164,8 @@ object DependencyResolver {
       out.println(pom)
       out.close()
     } catch {
-      case ex: Exception => logger.debug(s"Could not download ${dependency.pomUrl}: ${ex.getMessage}")
+      case ex: Exception =>
+//        logger.debug(s"Could not download ${dependency.pomUrl}: ${ex.getMessage}")
     }
     dependency.pomFile
   }
